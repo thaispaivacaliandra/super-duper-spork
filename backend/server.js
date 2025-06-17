@@ -63,11 +63,28 @@ app.set('trust proxy', 1);
 app.use('/api/', apiLimiter);
 
 // Servir arquivos estáticos (dashboard admin)
+// Servir arquivos estáticos (dashboard admin)
 app.use('/admin', express.static(path.join(__dirname, 'public')));
 
-// 🔥 NOVA LINHA: Servir frontend na raiz
-app.use('/', express.static(path.join(__dirname, '../frontend')));
+// 🔧 CORREÇÃO: Servir frontend com verificação
+const fs = require('fs');
+const frontendPath = path.join(__dirname, '..', 'frontend');
 
+if (fs.existsSync(frontendPath)) {
+    console.log('✅ Frontend encontrado:', frontendPath);
+    app.use('/', express.static(frontendPath));
+} else {
+    console.log('❌ Frontend não encontrado:', frontendPath);
+    // Fallback manual
+    app.get('/', (req, res) => {
+        res.json({
+            message: '📱 Sistema Semana de Inovação 2025',
+            status: 'Frontend em configuração',
+            dashboard: '/admin',
+            api: '/api/status'
+        });
+    });
+}
 // Rota específica para API de status (sobrescreve o static quando acessar /api)
 app.get('/api/status', (req, res) => {
     res.json({ 
