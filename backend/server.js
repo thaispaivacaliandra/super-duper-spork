@@ -62,17 +62,21 @@ app.set('trust proxy', 1);
 // Rate limiting geral
 app.use('/api/', apiLimiter);
 
-// Servir arquivos estáticos (dashboard)
+// Servir arquivos estáticos (dashboard admin)
 app.use('/admin', express.static(path.join(__dirname, 'public')));
 
-// Rota de teste
-app.get('/', (req, res) => {
+// 🔥 NOVA LINHA: Servir frontend na raiz
+app.use('/', express.static(path.join(__dirname, '../frontend')));
+
+// Rota específica para API de status (sobrescreve o static quando acessar /api)
+app.get('/api/status', (req, res) => {
     res.json({ 
         message: '🎉 API da Semana de Inovação 2025 funcionando!',
         status: 'online',
         database: 'conectado',
         security: 'habilitada',
-        dashboard: `http://localhost:${PORT}/admin`,
+        dashboard: `/admin`,
+        formulario: '/',
         environment: process.env.NODE_ENV || 'development',
         timestamp: new Date().toISOString()
     });
@@ -305,11 +309,6 @@ app.get('/api/export/csv', auth.middlewareAuth, async (req, res) => {
     }
 });
 
-// ROTA: Redirect para admin
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
-
 // Health check para monitoramento
 app.get('/health', (req, res) => {
     res.json({
@@ -329,8 +328,9 @@ app.use('*', (req, res) => {
     res.status(404).json({
         message: '🚫 Rota não encontrada',
         endpoints: {
-            'Homepage': '/',
+            'Formulário': '/',
             'Dashboard Admin': '/admin',
+            'API Status': '/api/status',
             'API Inscrições': '/api/inscricoes',
             'Health Check': '/health'
         }
@@ -367,6 +367,7 @@ async function iniciarServidor() {
             console.log('   🛡️  MODO SEGURO ATIVADO');
             console.log('================================');
             console.log(`🚀 Servidor: http://localhost:${PORT}`);
+            console.log(`📱 Formulário: http://localhost:${PORT}/`);
             console.log(`📋 Dashboard: http://localhost:${PORT}/admin`);
             console.log(`🔐 Login: ${process.env.ADMIN_EMAIL} / [senha protegida]`);
             console.log(`📊 API: http://localhost:${PORT}/api/inscricoes`);
