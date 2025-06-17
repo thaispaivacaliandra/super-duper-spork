@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Semana de Inovação 2025</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* LOGIN SCREEN */
+        .login-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .login-card {
+            background: rgba(255,255,255,0.95);
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-card h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #667eea;
+            font-size: 2rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .error-message {
+            color: #e74c3c;
+            text-align: center;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        /* DASHBOARD */
+        .dashboard {
+            display: none;
+        }
+
+        .header {
+            background: rgba(255,255,255,0.95);
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 1.8rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logout-btn {
+            padding: 0.5rem 1rem;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.95);
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .actions-bar {
+            background: rgba(255,255,255,0.95);
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            backdrop-filter: blur(10px);
+        }
+
+        .action-btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: transform 0.3s;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-info {
+            background: #3498db;
+            color: white;
+        }
+
+        .inscricoes-container {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .search-bar {
+            margin-bottom: 1.5rem;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+
+        .inscricoes-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .inscricao-item {
+            border: 1px solid #e1e5e9;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: box-shadow 0.3s;
+        }
+
+        .inscricao-item:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .inscricao-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 0.5rem;
+        }
+
+        .inscricao-nome {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .inscricao-status {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-concluida {
+            background: #d5edda;
+            color: #155724;
+        }
+
+        .inscricao-details {
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+            
+            .actions-bar {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- TELA DE LOGIN -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-card">
+            <h1>🌱 Admin Dashboard</h1>
+            <form id="loginForm">
+                <div class="input-group">
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" value="admin@semana-inovacao.com" required>
+                </div>
+                <div class="input-group">
+                    <label for="senha">Senha:</label>
+                    <input type="password" id="senha" value="admin123" required>
+                </div>
+                <button type="submit" class="login-btn">🔐 Entrar</button>
+                <div class="error-message" id="errorMessage"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- DASHBOARD PRINCIPAL -->
+    <div id="dashboard" class="dashboard">
+        <div class="container">
+            <!-- HEADER -->
+            <div class="header">
+                <h1>🌱 Semana de Inovação 2025</h1>
+                <div class="user-info">
+                    <span>👤 <span id="userEmail">admin@semana-inovacao.com</span></span>
+                    <button class="logout-btn" onclick="logout()">🚪 Sair</button>
+                </div>
+            </div>
+
+            <!-- ESTATÍSTICAS -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number" id="totalInscricoes">0</span>
+                    <span class="stat-label">Total de Inscrições</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="totalPresencial">0</span>
+                    <span class="stat-label">Participação Presencial</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="totalRemoto">0</span>
+                    <span class="stat-label">Participação Remota</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="totalServidores">0</span>
+                    <span class="stat-label">Servidores Públicos</span>
+                </div>
+            </div>
+
+            <!-- AÇÕES -->
+            <div class="actions-bar">
+                <button class="action-btn btn-success" onclick="exportarCSV()">
+                    📥 Exportar CSV
+                </button>
+                <button class="action-btn btn-info" onclick="atualizarDados()">
+                    🔄 Atualizar Dados
+                </button>
+                <button class="action-btn btn-primary" onclick="verEstatisticas()">
+                    📊 Estatísticas Detalhadas
+                </button>
+            </div>
+
+            <!-- LISTA DE INSCRIÇÕES -->
+            <div class="inscricoes-container">
+                <h2>📋 Lista de Inscrições</h2>
+                
+                <div class="search-bar">
+                    <input type="text" id="searchInput" placeholder="🔍 Buscar por nome, email, empresa..." onkeyup="filtrarInscricoes()">
+                </div>
+
+                <div class="inscricoes-list" id="inscricoesList">
+                    <div class="loading">Carregando inscrições...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Token de autenticação
+        let authToken = localStorage.getItem('authToken');
+
+        // Verificar se já está logado
+        if (authToken) {
+            verificarToken();
+        }
+
+        // Login
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, senha })
+                });
+                
+                const result = await response.json();
+                
+                if (result.sucesso) {
+                    localStorage.setItem('authToken', result.token);
+                    authToken = result.token;
+                    mostrarDashboard();
+                } else {
+                    mostrarErro(result.mensagem);
+                }
+                
+            } catch (error) {
+                mostrarErro('Erro de conexão');
+            }
+        });
+
+        async function verificarToken() {
+            try {
+                const response = await fetch('/api/verificar-token', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    mostrarDashboard();
+                } else {
+                    logout();
+                }
+            } catch (error) {
+                logout();
+            }
+        }
+
+        function mostrarDashboard() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            carregarDados();
+        }
+
+        function mostrarErro(mensagem) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = mensagem;
+            errorDiv.style.display = 'block';
+        }
+
+        function logout() {
+            localStorage.removeItem('authToken');
+            authToken = null;
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('dashboard').style.display = 'none';
+        }
+
+        async function carregarDados() {
+            try {
+                // Carregar estatísticas
+                const statsResponse = await fetch('/api/estatisticas', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const stats = await statsResponse.json();
+                
+                if (stats.success) {
+                    atualizarEstatisticas(stats.estatisticas);
+                }
+                
+                // Carregar inscrições
+                const inscricoesResponse = await fetch('/api/inscricoes', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const inscricoes = await inscricoesResponse.json();
+                
+                if (inscricoes.success) {
+                    window.todasInscricoes = inscricoes.inscricoes;
+                    mostrarInscricoes(inscricoes.inscricoes);
+                }
+                
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+            }
+        }
+
+        function atualizarEstatisticas(stats) {
+            document.getElementById('totalInscricoes').textContent = stats.total || 0;
+            
+            // Calcular estatísticas de participação
+            let presencial = 0, remoto = 0, servidores = 0;
+            
+            if (stats.participacao) {
+                stats.participacao.forEach(p => {
+                    if (p.participacao === 'presencial') presencial = p.count;
+                    if (p.participacao === 'remoto') remoto = p.count;
+                });
+            }
+            
+            if (stats.servidores) {
+                stats.servidores.forEach(s => {
+                    if (s.servidor !== 'nao') servidores += s.count;
+                });
+            }
+            
+            document.getElementById('totalPresencial').textContent = presencial;
+            document.getElementById('totalRemoto').textContent = remoto;
+            document.getElementById('totalServidores').textContent = servidores;
+        }
+
+        function mostrarInscricoes(inscricoes) {
+            const lista = document.getElementById('inscricoesList');
+            
+            if (inscricoes.length === 0) {
+                lista.innerHTML = '<div class="loading">Nenhuma inscrição encontrada.</div>';
+                return;
+            }
+            
+            const html = inscricoes.map(ins => `
+                <div class="inscricao-item">
+                    <div class="inscricao-header">
+                        <div class="inscricao-nome">${ins.nome_completo}</div>
+                        <div class="inscricao-status status-concluida">${ins.status}</div>
+                    </div>
+                    <div class="inscricao-details">
+                        📧 ${ins.email}<br>
+                        📱 ${ins.celular || 'Não informado'}<br>
+                        🏢 ${ins.empresa || 'Não informado'}<br>
+                        🎯 ${ins.participacao || 'Não informado'}<br>
+                        📅 ${ins.data_inscricao}
+                    </div>
+                </div>
+            `).join('');
+            
+            lista.innerHTML = html;
+        }
+
+        function filtrarInscricoes() {
+            const termo = document.getElementById('searchInput').value.toLowerCase();
+            
+            if (!window.todasInscricoes) return;
+            
+            const filtradas = window.todasInscricoes.filter(ins => 
+                ins.nome_completo.toLowerCase().includes(termo) ||
+                ins.email.toLowerCase().includes(termo) ||
+                (ins.empresa && ins.empresa.toLowerCase().includes(termo))
+            );
+            
+            mostrarInscricoes(filtradas);
+        }
+
+        async function exportarCSV() {
+            try {
+                const response = await fetch('/api/export/csv', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'inscricoes-semana-inovacao-2025.csv';
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                }
+            } catch (error) {
+                alert('Erro ao exportar CSV');
+            }
+        }
+
+        function atualizarDados() {
+            carregarDados();
+        }
+
+        function verEstatisticas() {
+            alert('Estatísticas detalhadas em desenvolvimento!');
+        }
+    </script>
+</body>
+</html>

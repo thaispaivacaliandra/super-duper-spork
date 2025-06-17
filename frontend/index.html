@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscrição - Semana de Inovação 2025</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-image: url(../frontend/images/bg.png);
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            object-fit: cover;
+            
+            color: #2A5E2C;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Elementos flutuantes minimalistas */
+        .floating-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.1;
+        }
+
+        .shape {
+            position: absolute;
+            border-radius: 50%;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .shape-1 {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(45deg, #8C951C, #FF8500);
+            top: 10%;
+            left: 5%;
+            animation-delay: 0s;
+        }
+
+        .shape-2 {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(45deg, #FF8500, #A30000);
+            top: 70%;
+            right: 10%;
+            animation-delay: 5s;
+        }
+
+        .shape-3 {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(45deg, #2A5E2C, #8C951C);
+            top: 50%;
+            left: 80%;
+            animation-delay: 10s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-20px) rotate(90deg); }
+            50% { transform: translateY(-10px) rotate(180deg); }
+            75% { transform: translateY(-30px) rotate(270deg); }
+        }
+
+        .form-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 2rem 0;
+            z-index: 10;
+        }
+
+        .form-content {
+            max-width: 900px;
+            width: 90%;
+            position: relative;
+            min-height: 80vh;
+        }
+
+        .question {
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: absolute;
+            width: 100%;
+            top: 0;
+            left: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 20px 60px rgba(42, 94, 44, 0.1);
+            border: 1px solid rgba(140, 149, 28, 0.1);
+            min-height: 70vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .question.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        /* Espaços para imagens personalizadas */
+        .hero-image {
+            width: 90%;
+            height: 200px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .section-image {
+            height: 120px;
+            margin: 0 auto 1.5rem;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .custom-image {
+            width: 100%;
+            height: 100%;
+        }
+
+        .question h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #2A5E2C, #8C951C);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.1;
+        }
+
+        .question h2 {
+            font-size: 2.4rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 1rem;
+            color: #2A5E2C;
+            line-height: 1.2;
+        }
+
+        .question h3 {
+            font-size: 1.4rem;
+            margin-bottom: 2rem;
+            font-weight: 500;
+            text-align: center;
+            color: #5A7C5C;
+        }
+
+        .question p {
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            opacity: 0.8;
+            line-height: 1.6;
+            text-align: center;
+            color: #6B8E6D;
+        }
+
+        .subtitle {
+            font-size: 1.8rem;
+            font-weight: 300;
+            color: #FF8500;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        input[type="text"], 
+        input[type="email"], 
+        input[type="tel"],
+        input[type="password"],
+        input[type="date"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 1.2rem 1.5rem;
+            font-size: 1rem;
+            border: 2px solid rgba(140, 149, 28, 0.2);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.8);
+            color: #2A5E2C;
+            outline: none;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+            font-weight: 400;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            border-color: #FF8500;
+            background: rgba(255, 255, 255, 1);
+            box-shadow: 0 0 0 4px rgba(255, 133, 0, 0.1);
+            transform: translateY(-1px);
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            color: rgba(42, 94, 44, 0.5);
+        }
+
+        select {
+            cursor: pointer;
+        }
+
+        select option {
+            background: white;
+            color: #2A5E2C;
+        }
+
+        .checkbox-group {
+            display: grid;
+            gap: 0.8rem;
+            margin-top: 1.5rem;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 1.2rem 1.5rem;
+            background: rgba(255, 255, 255, 0.6);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .checkbox-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(140, 149, 28, 0.05), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .checkbox-item:hover {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: rgba(140, 149, 28, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(140, 149, 28, 0.1);
+        }
+
+        .checkbox-item:hover::before {
+            left: 100%;
+        }
+
+        .checkbox-item:has(input:checked) {
+            background: linear-gradient(135deg, rgba(140, 149, 28, 0.1), rgba(255, 133, 0, 0.05));
+            border-color: #8C951C;
+            box-shadow: 0 8px 30px rgba(140, 149, 28, 0.2);
+        }
+
+        .checkbox-item input[type="checkbox"],
+        .checkbox-item input[type="radio"] {
+            margin-right: 1rem;
+            transform: scale(1.2);
+            cursor: pointer;
+            accent-color: #FF8500;
+        }
+
+        .checkbox-item label {
+            font-size: 1rem;
+            cursor: pointer;
+            flex: 1;
+            line-height: 1.5;
+            color: #2A5E2C;
+            font-weight: 400;
+        }
+
+        .checkbox-item input:checked + label {
+            font-weight: 500;
+            color: #1A4E1C;
+        }
+
+        .sub-options {
+            margin-left: 2rem;
+            margin-top: 1rem;
+            padding: 1.5rem;
+            background: rgba(140, 149, 28, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(140, 149, 28, 0.1);
+            display: none;
+        }
+
+        .sub-options.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .navigation {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            gap: 1rem;
+            z-index: 100;
+        }
+
+        .nav-btn {
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #8C951C, #6B8B1A);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            box-shadow: 0 8px 25px rgba(140, 149, 28, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(140, 149, 28, 0.4);
+        }
+
+        .nav-btn:hover:not(:disabled)::before {
+            left: 100%;
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: rgba(140, 149, 28, 0.3);
+        }
+
+        .nav-btn.primary {
+            background: linear-gradient(135deg, #FF8500, #E67300);
+        }
+
+        .nav-btn.primary:hover:not(:disabled) {
+            box-shadow: 0 12px 35px rgba(255, 133, 0, 0.4);
+        }
+
+        .progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #8C951C, #FF8500);
+            transition: width 0.4s ease;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(140, 149, 28, 0.3);
+        }
+
+        .question-counter {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.9);
+            color: #2A5E2C;
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(140, 149, 28, 0.2);
+            font-weight: 500;
+            box-shadow: 0 8px 25px rgba(140, 149, 28, 0.1);
+        }
+
+        .welcome-screen {
+            text-align: center;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: absolute;
+            width: 100%;
+            top: 0;
+            left: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 20px 60px rgba(42, 94, 44, 0.1);
+            border: 1px solid rgba(140, 149, 28, 0.1);
+            min-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .welcome-screen.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .start-btn {
+            padding: 1.2rem 3rem;
+            background: linear-gradient(135deg, #FF8500, #E67300);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+            box-shadow: 0 12px 35px rgba(255, 133, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .start-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 16px 45px rgba(255, 133, 0, 0.4);
+        }
+
+        .start-btn:hover::before {
+            left: 100%;
+        }
+
+        .final-screen {
+            text-align: center;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: absolute;
+            width: 100%;
+            top: 0;
+            left: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 20px 60px rgba(42, 94, 44, 0.1);
+            border: 1px solid rgba(140, 149, 28, 0.1);
+            min-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .final-screen.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .final-screen h2 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #2A5E2C, #FF8500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .final-screen p {
+            font-size: 1.2rem;
+            color: #5A7C5C;
+            line-height: 1.6;
+        }
+
+        .emoji {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            display: block;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-15px); }
+            60% { transform: translateY(-7px); }
+        }
+
+        .logo-container {
+            margin-bottom: 2rem;
+        }
+
+        .brand-logo {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #2A5E2C, #8C951C, #FF8500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 1px;
+            margin-top: 1rem;
+        }
+
+        .required {
+            color: #FF8500;
+            font-weight: 500;
+        }
+
+        .error-message {
+            color: #A30000;
+            font-size: 0.9rem;
+            margin-top: 0.8rem;
+            display: none;
+            text-align: center;
+            background: rgba(163, 0, 0, 0.1);
+            padding: 0.8rem;
+            border-radius: 8px;
+            border: 1px solid rgba(163, 0, 0, 0.2);
+        }
+
+        /* Animações para os checkboxes */
+        .checkbox-item {
+            animation: slideInUp 0.4s ease-out;
+        }
+
+        .checkbox-item:nth-child(odd) {
+            animation-delay: 0.1s;
+        }
+
+        .checkbox-item:nth-child(even) {
+            animation-delay: 0.2s;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Design responsivo */
+        @media (max-width: 768px) {
+            .form-content {
+                width: 95%;
+            }
+
+            .question {
+                padding: 2rem 1.5rem;
+                margin: 1rem 0;
+            }
+
+            .question h1 {
+                font-size: 2.5rem;
+            }
+
+            .question h2 {
+                font-size: 1.8rem;
+            }
+
+            .question h3 {
+                font-size: 1.2rem;
+            }
+
+            .input-row {
+                grid-template-columns: 1fr;
+            }
+
+            .navigation {
+                bottom: 1rem;
+                right: 1rem;
+                left: 1rem;
+                justify-content: space-between;
+            }
+
+            .question-counter {
+                top: 1rem;
+                right: 1rem;
+            }
+
+            .hero-image {
+                width: 150px;
+                height: 150px;
+            }
+
+            .section-image {
+                width: 100px;
+                height: 100px;
+            }
+
+            .floating-shapes {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Elementos decorativos minimalistas -->
+    <div class="floating-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+
+    <div class="progress" id="progress" style="display: none;"></div>
+    <div class="question-counter" id="counter" style="display: none;">1 / 24</div>
+    
+    <div class="form-container">
+        <div class="form-content">
+            <!-- Tela de Início -->
+            <div class="welcome-screen active" id="welcomeScreen">
+                <div class="logo-container">
+                    <!-- IMAGEM SUGERIDA: Use a ilustração principal da página 27 (arco-íris com personagens) -->
+                    <div class="hero-image">
+                        <img src="images/logo.png" alt="Semana de Inovação" class="custom-image">
+                        <!-- Placeholder: remova quando adicionar a imagem -->
+                        <div class="image-placeholder"></div>
+                    </div>
+                </div>
+                <h1>2025</h1>
+                <p class="subtitle">Um planeta, uma chance</p>
+                <p>Bem-vindo ao formulário de inscrição da Semana de Inovação 2025!<br>
+                Este processo levará cerca de 5 minutos e suas informações nos ajudarão a criar uma experiência personalizada para você.</p>
+                <button class="start-btn" onclick="startForm()">Começar Inscrição</button>
+            </div>
+
+            <!-- Pergunta 1: Nome Completo -->
+            <div class="question" data-question="1">
+                <!-- IMAGEM SUGERIDA: Use uma das araras coloridas da página 31 -->
+                <div class="section-image">
+                    <img src="images/azul.png" alt="Identidade" class="custom-image">
+                    <div class="image-placeholder"></div>
+                </div>
+                <h2>Vamos começar com seus dados básicos</h2>
+                <h3>Qual é o seu nome completo? <span class="required">*</span></h3>
+                <p>O nome informado será usado no certificado</p>
+                <div class="input-group">
+                    <input type="text" id="nomeCompleto" placeholder="Digite seu nome completo" required>
+                    <div class="error-message" id="error-nomeCompleto">Por favor, digite seu nome completo</div>
+                </div>
+            </div>
+
+            <!-- Pergunta 2: CPF -->
+            <div class="question" data-question="2">
+                <!-- IMAGEM SUGERIDA: Use o urucu (fruto vermelho) da página 31 -->
+                <div class="section-image">
+                    <img src="images/AGRICULTOR@3x.png" alt="Documento" class="custom-image">
+                    <div class="image-placeholder"></div>
+                </div>
+                <h2>Agora precisamos do seu CPF</h2>
+                <h3>Digite seu CPF <span class="required">*</span></h3>
+                <p>Só é possível fazer uma inscrição por CPF</p>
+                <div class="input-group">
+                    <input type="text" id="cpf" placeholder="000.000.000-00" required maxlength="14">
+                    <div class="error-message" id="error-cpf">Por favor, digite um CPF válido</div>
+                </div>
+            </div>
+
+            <!-- Pergunta 3: Email -->
+            <div class="question" data-question="3">
+                <!-- IMAGEM SUGERIDA: Use a arara vermelha da página 31 -->
+                <div class="section-image">
+                    <img src="images/ARARAS_3@3x.png" alt="Comunicação" class="custom-image">
+                    <div class="image-placeholder"></div>
+                </div>
+                <h2>Qual é o seu melhor email?</h2>
+                <h3>E-mail <span class="required">*</span></h3>
+                <div class="input-group">
+                    <div class="input-row">
+                        <input type="email" id="email" placeholder="seu@email.com" required>
+                        <input type="email" id="confirmEmail" placeholder="Confirme seu email" required>
+                    </div>
+                    <div class="error-message" id="error-email">Por favor, digite emails válidos e iguais</div>
+                </div>
+            </div>
+
+            <!-- Pergunta 4: Senha -->
+            <div class="question" data-question="4">
+                <!-- IMAGEM SUGERIDA: Use a palmeira da página 31 -->
+                <div class="section-image">
+                    <img src="images/BANANEIRAS@3x.png" alt="Segurança" class="custom-image">
+                    <div class="image-placeholder"></div>
+                </div>
+                <h2>Crie uma senha para sua conta</h2>
+                <h3>Senha <span class="required">*</span></h3>
+                <div class="input-group">
+                    <div class="input-row">
+                        <input type="password" id="senha" placeholder="Crie uma senha" required>
+                        <input type="password" id="confirmSenha" placeholder="Confirme sua senha" required>
+                    </div>
+                    <div class="error-message" id="error-senha">As senhas devem ser iguais e ter pelo menos 6 caracteres</div>
+                </div>
+            </div>
+
+            <!-- Pergunta 5: Nome Social -->
+            <div class="question" data-question="5">
+                <!-- IMAGEM SUGERIDA: Use o arbusto da página 31 -->
+                <div class="section-image">
+                    <img src="images/azul.png" alt="Diversidade" class="custom-image">
+                    <div class="image-placeholder"></div>
+                </div>
+                <h2>Informações pessoais</h2>
+                <h3>Nome Social (opcional)</h3>
+                <p>O nome social será exibido no crachá</p>
+                <div class="input-group">
+                    <input type="text" id="nomeSocial" placeholder="Digite seu nome social (opcional)">
+                </div>
+            </div>
+
+            <!-- Pergunta 6: Celular e Data Nascimento -->
+            <div class="question" data-question="6">
+                <!-- IMAGEM SUGERIDA: Use os personagens diversos da página 30 -->
+                <div class="section-image">
+                    <img src="images/azul.png" alt="Contato" class="custom-image">
+                    <div class="image-placeholder"></div>
+                </div>
+                <h2>Mais algumas informações</h2>
+                <h3>Celular e Data de Nascimento</h3>
+                <div class="input-group">
+                    <div class="input-row">
+                        <input type="tel" id="celular" placeholder="(11) 99999-9999">
+                        <input type="date" id="dataNascimento">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pergunta 7: Origem/Procedência -->
+            <div class="question" data-question="7">
+                <!-- IMAGEM SUGERIDA: Use o logo da Semana de Inovação da página 7 -->
+                <div class="section-image">
+                    <img src="logo-semana-inovacao.jpg" alt="Brasil" class="custom-image">
+                    <div class="image-placeholder"></div>
+                </div>
+                <h2>De onde você é?</h2>
+                <h3>Origem/Procedência</h3>
+                <div class="input-group">
+                    <select id="pais" onchange="toggleEstados()">
+                        <option value="">Selecione o país</option>
+                        <option value="BR" selected>Brasil</option>
+                        <option value="AR">Argentina</option>
+                        <option value="US">Estados Unidos</option>
+                        <option value="OTHER">Outro</option>
+                    </select>
+                    <select id="estado" style="margin-top: 1rem;">
+                        <option value="">Selecione o estado</option>
+                        <option value="SP">São Paulo</option>
+                        <option value="RJ">Rio de Janeiro</option>
+                        <option value="MG">Minas Gerais</option>
+                        <option value="RS">Rio Grande do Sul</option>
+                        <option value="PR">Paraná</option>
+                        <option value="SC">Santa Catarina</option>
+                        <option value="BA">Bahia</option>
+                        <option value="GO">Goiás</option>
+                        <option value="DF">Distrito Federal</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Pergunta 8: Vínculo Institucional -->
+            <div class="question" data-question="8">
+                <!-- IMAGEM SUGERIDA: Use o arqueiro indígena da página 30 (central) -->
+                <div class="section-image">
+                    <img src="arqueiro-indigena.jpg" alt="Instituição" class="custom-image">
+                    <div class="image-placeholder"></div>
+                </div>
+                <h2>Informações profissionais</h2>
+                <h3>Qual é o seu vínculo institucional atual?</h3>
+                <div class="input-group">
+                    <select id="vinculoInstitucional">
+                        <option value="">Selecione uma opção</option>
+                        <option value="publica">Instituição pública</option>
+                        <option value="privada">Instituição privada</option>
+                        <option value="terceiro-setor">Organização do terceiro setor</option>
+                        <option value="sem-vinculo">Não tenho vínculo institucional</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Pergunta 9: Empresa/Instituição -->
+            <div class="question" data-question="9">
+                <!-- IMAGEM SUGERIDA: Use a arte simplificada da página 32 (mangue com pessoas) -->
+                <div class="section-image">
+                    <img src="mangue-comunidade.jpg" alt="Trabalho" class="custom-image">
+                    <div class="image-placeholder"></div>
+                </div>
+                <h2>Empresa ou Instituição</h2>
+                <h3>Onde você trabalha?</h3>
+                <div class="input-group">
+                    <input type="text" id="empresa" placeholder="Nome da empresa ou instituição">
+                </div>
+            </div>
+
+            <!-- Pergunta 10: Cargo -->
+            <div class="question" data-question="10">
+                <!-- IMAGEM SUGERIDA: Use o personagem da esquerda da página 30 (pessoa trabalhando) -->
+                <div class="section-image">
+                    <img src="pessoa-trabalhando.jpg" alt="Cargo" class="custom-image">
+                    <div class="image-placeholder"></div>
+                </div>
+                <h2>Qual é o seu cargo?</h2>
+                <div class="input-group">
+                    <select id="cargo" onchange="toggleOutroCargo()">
+                        <option value="">Selecione seu cargo</option>
+                        <option value="ceo">CEO/Presidente</option>
+                        <option value="diretor">Diretor</option>
+                        <option value="gerente">Gerente</option>
+                        <option value="coordenador">Coordenador</option>
+                        <option value="consultor">Consultor</option>
+                        <option value="outro">Outro</option>
+                    </select>
+                    <input type="text" id="outroCargo" placeholder="Especifique seu cargo" style="margin-top: 1rem; display: none;">
+                </div>
+            </div>
+
+            <!-- Pergunta 11: Cargo de Liderança -->
+            <div class="question" data-question="11">
+                <!-- IMAGEM SUGERIDA: Use o personagem da direita da página 30 (pessoa com equipamento) -->
+                <div class="section-image">
+                    <img src="pessoa-lideranca.jpg" alt="Liderança" class="custom-image">
+                    <div class="image-placeholder"></div>
+                </div>
+                <h2>Posição de liderança</h2>
+                <h3>Ocupa cargo de liderança ou direção na instituição em que atua?</h3>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="radio" id="lideranca-sim" name="lideranca" value="sim">
+                        <label for="lideranca-sim">Sim</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="radio" id="lideranca-nao" name="lideranca" value="nao">
+                        <label for="lideranca-nao">Não</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pergunta 12: Servidor Público -->
+            <div class="question" data-question="12">
+                <!-- IMAGEM SUGERIDA: Use o logo do Governo Federal da página 9 -->
+                <div class="section-image">
+                    <img src="governo-federal.jpg" alt="Servidor Público" class="custom-image">
+                    <div class="image-placeholder"></div>
+                </div>
+                <h2>Você é servidor(a) público(a)?</h2>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="radio" id="servidor-nao" name="servidor" value="nao">
+                        <label for="servidor-nao">Não</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="radio" id="servidor-municipal" name="servidor" value="municipal">
+                        <label for="servidor-municipal">Municipal</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="radio" id="servidor-estadual" name="servidor" value="estadual">
+                        <label for="servidor-estadual">Estadual</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="radio" id="servidor-federal" name="servidor" value="federal">
+                        <label for="servidor-federal">Federal</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pergunta 13: Participação -->
+            <div class="question" data-question="13">
+                <!-- IMAGEM SUGERIDA: Use as araras voando coloridas da página 31 -->
+                <div class="section-image">
+                    <img src="araras-voando.jpg" alt="Participação" class="custom-image">
+                    <div class="image-placeholder"></div>
+                </div>
+                <h2>Como você pretende acompanhar a Semana de Inovação 2025?</h2>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="radio" id="presencial" name="participacao" value="presencial">
+                        <label for="presencial">Presencial (com acesso remoto incluso)</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="radio" id="remoto" name="participacao" value="remoto">
+                        <label for="remoto">Somente remoto</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pergunta 14: Áreas de Interesse -->
+            <div class="question" data-question="14">
+                <!-- IMAGEM SUGERIDA: Use o padrão de pontos da página 34 (lado esquerdo) -->
+                <div class="section-image">
+                    <img src="padrao-pontos.jpg" alt="Interesses" class="custom-image">
+                    <div class="image-placeholder"></div>
+                </div>
+                <h2>Áreas de Interesse</h2>
+                <h3>Quais temas mais despertam seu interesse? (pode selecionar múltiplas opções)</h3>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="comportamento" name="interesse" value="comportamento">
+                        <label for="comportamento">Comportamento, educação e cultura para a sustentabilidade</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="gestao" name="interesse" value="gestao">
+                        <label for="gestao">Transformação da gestão pública para um desenvolvimento responsável</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="paradigmas" name="interesse" value="paradigmas">
+                        <label for="paradigmas">Novos paradigmas para a regeneração e resiliência</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="tecnologias" name="interesse" value="tecnologias">
+                        <label for="tecnologias">Tecnologias para um novo amanhã</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="territorios" name="interesse" value="territorios">
+                        <label for="territorios">Territórios e ecossistemas verdes e azuis</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pergunta 15: Acessibilidade -->
+            <div class="question" data-question="15">
+                <!-- IMAGEM SUGERIDA: Use o padrão de sementes vermelhas da página 34 (lado direito) -->
+                <div class="section-image">
+                    <img src="padrao-sementes.jpg" alt="Acessibilidade" class="custom-image">
+                    <div class="image-placeholder"></div>
+                </div>
+                <h2>Acessibilidade <span class="required">*</span></h2>
+                <h3>Você se identifica como pessoa com deficiência?</h3>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="radio" id="deficiencia-nao" name="deficiencia" value="nao" onchange="toggleDeficiencia()">
+                        <label for="deficiencia-nao">Não</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="radio" id="deficiencia-sim" name="deficiencia" value="sim" onchange="toggleDeficiencia()">
+                        <label for="deficiencia-sim">Sim</label>
+                    </div>
+                </div>
+                <div id="tiposDeficiencia" class="sub-options">
+                    <h4 style="margin: 1rem 0; font-size: 1.1rem; color: #2A5E2C;">Que tipo de deficiência?</h4>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="def-fisica" name="tipoDeficiencia" value="fisica">
+                            <label for="def-fisica">Deficiência Física</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="def-intelectual" name="tipoDeficiencia" value="intelectual">
+                            <label for="def-intelectual">Deficiência Intelectual</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="def-auditiva" name="tipoDeficiencia" value="auditiva">
+                            <label for="def-auditiva">Deficiência Auditiva</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="def-visual" name="tipoDeficiencia" value="visual">
+                            <label for="def-visual">Deficiência Visual</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="neurodivergente" name="tipoDeficiencia" value="neurodivergente">
+                            <label for="neurodivergente">Neurodivergente</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="def-outra" name="tipoDeficiencia" value="outra">
+                            <label for="def-outra">Outra</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pergunta 16: Declaração Racial -->
+            <div class="question" data-question="16">
+                <!-- IMAGEM SUGERIDA: Use uma das versões coloridas do lettering da página 13 -->
+                <div class="section-image">
+                    <img src="lettering-diversidade.jpg" alt="Diversidade" class="custom-image">
+                    <div class="image-placeholder"></div>
+                </div>
+                <h2>Declaração de Diversidade <span class="required">*</span></h2>
+                <h3>Como se declara em relação à raça, cor ou etnia?</h3>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="radio" id="raca-preto" name="raca" value="preto">
+                        <label for="raca-preto">Preto</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="radio" id="raca-branco" name="raca" value="branco">
+                        <label for="raca-branco">Branco</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="radio" id="raca-amarelo" name="raca" value="amarelo">
+                        <label for="raca-amarelo">Amarelo</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="radio" id="raca-pardo" name="raca" value="pardo">
+                        <label for="raca-pardo">Pardo</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="radio" id="raca-indigena" name="raca" value="indigena">
+                        <label for="raca-indigena">Indígena</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="radio" id="raca-quilombola" name="raca" value="quilombola">
+                        <label for="raca-quilombola">Quilombola</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="radio" id="raca-outro" name="raca" value="outro">
+                        <label for="raca-outro">Outro</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="radio" id="raca-nao-responder" name="raca" value="nao-responder">
+                        <label for="raca-nao-responder">Prefiro não responder</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pergunta 17: Declaração de Gênero -->
+            <div class="question" data-question="17">
+                <!-- IMAGEM SUGERIDA: Use os cards de redes sociais da página 40 -->
+                <div class="section-image">
+                    <img src="cards-redes-sociais.jpg" alt="Gênero" class="custom-image">
+                    <div class="image-placeholder"></div>
+                </div>
+                <h2>Como se declara em relação a gênero?</h2>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="radio" id="genero-feminino" name="genero" value="feminino">
+                        <label for="genero-feminino">Feminino</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="radio" id="genero-masculino" name="genero" value="masculino">
+                        <label for="genero-masculino">Masculino</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="radio" id="genero-nao-binario" name="genero" value="nao-binario">
+                        <label for="genero-nao-binario">Não binário</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="radio" id="genero-nao-informar" name="genero" value="nao-informar">
+                        <label for="genero-nao-informar">Prefiro não informar</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="radio" id="genero-outro" name="genero" value="outro">
+                        <label for="genero-outro">Outro</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pergunta 18: InovaGov -->
+            <div class="question" data-question="18">
+                <!-- IMAGEM SUGERIDA: Use os avatares da página 38 -->
+                <div class="section-image">
+                    <img src="avatares-inovagov.jpg" alt="InovaGov" class="custom-image">
+                    <div class="image-placeholder"></div>
+                </div>
+                <h2>Adesão à Rede InovaGov</h2>
+                <h3>A InovaGov é uma comunidade voltada à inovação com benefícios para toda sociedade. Ao se inscrever na Semana de Inovação, você aceita fazer parte da Rede InovaGov?</h3>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="radio" id="inovagov-sim" name="inovagov" value="sim">
+                        <label for="inovagov-sim">Sim</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="radio" id="inovagov-nao" name="inovagov" value="nao">
+                        <label for="inovagov-nao">Não</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pergunta 19: Comunicações -->
+            <div class="question" data-question="19">
+                <!-- IMAGEM SUGERIDA: Use o mockup do celular da página 39 -->
+                <div class="section-image">
+                    <img src="mockup-celular.jpg" alt="Comunicações" class="custom-image">
+                    <div class="image-placeholder"></div>
+                </div>
+                <h2>Gostaria de receber atualizações?</h2>
+                <h3>Gostaria de se inscrever para receber conteúdos e atualizações exclusivas sobre a Semana de Inovação?</h3>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="radio" id="comunicacoes-sim" name="comunicacoes" value="sim">
+                        <label for="comunicacoes-sim">Sim, quero receber atualizações</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="radio" id="comunicacoes-nao" name="comunicacoes" value="nao">
+                        <label for="comunicacoes-nao">Não, obrigado</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pergunta 20: Laboratório de Inovação -->
+            <div class="question" data-question="20">
+                <!-- IMAGEM SUGERIDA: Use as versões do logo em inglês e espanhol da página 10 -->
+                <div class="section-image">
+                    <img src="logos-internacionais.jpg" alt="Laboratório" class="custom-image">
+                    <div class="image-placeholder"></div>
+                </div>
+                <h2>Laboratório de Inovação</h2>
+                <h3>Você faz parte de algum laboratório de inovação?</h3>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="radio" id="laboratorio-nao" name="laboratorio" value="nao" onchange="toggleLaboratorio()">
+                        <label for="laboratorio-nao">Não</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="radio" id="laboratorio-sim" name="laboratorio" value="sim" onchange="toggleLaboratorio()">
+                        <label for="laboratorio-sim">Sim</label>
+                    </div>
+                </div>
+                <div id="qualLaboratorio" class="sub-options" style="margin-top: 2rem;">
+                    <input type="text" id="nomeLaboratorio" placeholder="Qual laboratório de inovação?">
+                </div>
+            </div>
+
+            <!-- Pergunta 21: Termos de Participação -->
+            <div class="question" data-question="21">
+                <!-- IMAGEM SUGERIDA: Use o poster vertical da página 28 -->
+                <div class="section-image">
+                    <img src="poster-vertical.jpg" alt="Termos" class="custom-image">
+                    <div class="image-placeholder"></div>
+                </div>
+                <h2>Termos e Condições <span class="required">*</span></h2>
+                <h3>Concordância com os Termos de Participação</h3>
+                <p>Você concorda em cumprir e estar sujeito aos termos de participação do evento, incluindo o código de conduta?</p>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="termos-participacao" name="termos" value="aceito" required>
+                        <label for="termos-participacao">Sim, concordo com os termos de participação</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pergunta 22: Política de Privacidade -->
+            <div class="question" data-question="22">
+                <!-- IMAGEM SUGERIDA: Use o poster horizontal da página 29 -->
+                <div class="section-image">
+                    <img src="poster-horizontal.jpg" alt="Privacidade" class="custom-image">
+                    <div class="image-placeholder"></div>
+                </div>
+                <h2>Política de Privacidade <span class="required">*</span></h2>
+                <h3>Autorização para uso de dados</h3>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="compartilhamento-dados" name="privacidade" value="autorizo-compartilhamento">
+                        <label for="compartilhamento-dados">Autorizo o compartilhamento dos meus dados com patrocinadores e parceiros da Semana de Inovação, para o envio ocasional de comunicações sobre produtos, serviços e novidades</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="processamento-dados" name="privacidade" value="autorizo-processamento" required>
+                        <label for="processamento-dados">Autorizo o processamento dos meus dados pessoais para receber comunicações com informações, inclusive comerciais e promocionais, relacionadas à Semana de Inovação. Estou ciente de que posso cancelar esta assinatura a qualquer momento</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pergunta 23: Autorização de Uso de Imagem -->
+            <div class="question" data-question="23">
+                <!-- IMAGEM SUGERIDA: Use as cores da paleta da página 19 -->
+                <div class="section-image">
+                    <img src="paleta-cores.jpg" alt="Imagem" class="custom-image">
+                    <div class="image-placeholder"></div>
+                </div>
+                <h2>Autorização para Uso de Imagem <span class="required">*</span></h2>
+                <h3>Permissão para captação e uso de imagem</h3>
+                <p>Autorizo a Escola Nacional de Administração Pública – Enap a captar e usar minha imagem e/ou voz, por meio de fotos e vídeos, durante minha participação na Semana de Inovação 2025, para fins institucionais. Esta autorização é voluntária e pode ser revogada a qualquer momento.</p>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="uso-imagem" name="imagem" value="autorizo" required>
+                        <label for="uso-imagem">Sim, autorizo o uso da minha imagem</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pergunta 24: Cancelamento e Alterações -->
+            <div class="question" data-question="24">
+                <!-- IMAGEM SUGERIDA: Use a escala de cores completa da página 20 -->
+                <div class="section-image">
+                    <img src="escala-cores.jpg" alt="Alterações" class="custom-image">
+                    <div class="image-placeholder"></div>
+                </div>
+                <h2>Cancelamento e Alterações <span class="required">*</span></h2>
+                <h3>Ciência sobre alterações</h3>
+                <p>Você está ciente de que a Enap pode alterar a programação do evento conforme necessário?</p>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="alteracoes-evento" name="alteracoes" value="ciente" required>
+                        <label for="alteracoes-evento">Sim, estou ciente das possíveis alterações</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tela final -->
+            <div class="final-screen" id="finalScreen">
+                <!-- IMAGEM SUGERIDA: Use novamente a ilustração principal da página 27 -->
+                <div class="hero-image">
+                    <img src="sua-imagem-sucesso.jpg" alt="Sucesso" class="custom-image">
+                    <div class="image-placeholder"></div>
+                </div>
+                <span class="emoji">🎉</span>
+                <h2>Inscrição Concluída!</h2>
+                <p>Parabéns! Sua inscrição na Semana de Inovação 2025 foi realizada com sucesso.<br><br>
+                Em breve você receberá um e-mail de confirmação com todas as informações sobre o evento.<br><br>
+                Obrigado por fazer parte desta jornada de inovação! 🚀</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="navigation" style="display: none;">
+        <button class="nav-btn" id="prevBtn" onclick="previousQuestion()" disabled>Anterior</button>
+        <button class="nav-btn primary" id="nextBtn" onclick="nextQuestion()">Próximo</button>
+    </div>
+
+    <script>
+        let currentQuestion = 0;
+const totalQuestions = 24;
+const formData = {};
+
+function startForm() {
+    document.getElementById('welcomeScreen').classList.remove('active');
+    
+    setTimeout(() => {
+        document.getElementById('progress').style.display = 'block';
+        document.getElementById('counter').style.display = 'block';
+        document.querySelector('.navigation').style.display = 'flex';
+        currentQuestion = 1;
+        showQuestion(currentQuestion);
+    }, 300);
+}
+
+function updateProgress() {
+    const progress = (currentQuestion / totalQuestions) * 100;
+    document.getElementById('progress').style.width = progress + '%';
+    document.getElementById('counter').textContent = currentQuestion + ' / ' + totalQuestions;
+}
+
+function showQuestion(questionNumber) {
+    // Remove active de todas as perguntas
+    document.querySelectorAll('.question').forEach(q => {
+        q.classList.remove('active');
+    });
+    
+    // Pequeno delay para permitir a animação de saída
+    setTimeout(() => {
+        const currentQ = document.querySelector(`[data-question="${questionNumber}"]`);
+        if (currentQ) {
+            currentQ.classList.add('active');
+        }
+    }, 100);
+    
+    document.getElementById('prevBtn').disabled = questionNumber === 1;
+    
+    if (questionNumber === totalQuestions) {
+        document.getElementById('nextBtn').textContent = 'Finalizar';
+    } else {
+        document.getElementById('nextBtn').textContent = 'Próximo';
+    }
+    
+    updateProgress();
+}
+
+function nextQuestion() {
+    if (!validateCurrentQuestion()) {
+        return;
+    }
+    
+    saveCurrentQuestionData();
+    
+    if (currentQuestion < totalQuestions) {
+        currentQuestion++;
+        showQuestion(currentQuestion);
+    } else {
+        finishForm();
+    }
+}
+
+function previousQuestion() {
+    if (currentQuestion > 1) {
+        currentQuestion--;
+        showQuestion(currentQuestion);
+    }
+}
+
+function validateCurrentQuestion() {
+    const errorMessages = document.querySelectorAll('.error-message');
+    errorMessages.forEach(msg => msg.style.display = 'none');
+
+    switch(currentQuestion) {
+        case 1:
+            const nome = document.getElementById('nomeCompleto').value.trim();
+            if (!nome) {
+                showError('error-nomeCompleto', 'Por favor, digite seu nome completo');
+                return false;
+            }
+            break;
+        case 2:
+            const cpf = document.getElementById('cpf').value.trim();
+            if (!cpf || !isValidCPF(cpf)) {
+                showError('error-cpf', 'Por favor, digite um CPF válido');
+                return false;
+            }
+            break;
+        case 3:
+            const email = document.getElementById('email').value.trim();
+            const confirmEmail = document.getElementById('confirmEmail').value.trim();
+            if (!email || !isValidEmail(email) || email !== confirmEmail) {
+                showError('error-email', 'Por favor, digite emails válidos e iguais');
+                return false;
+            }
+            break;
+        case 4:
+            const senha = document.getElementById('senha').value;
+            const confirmSenha = document.getElementById('confirmSenha').value;
+            if (!senha || senha.length < 6 || senha !== confirmSenha) {
+                showError('error-senha', 'As senhas devem ser iguais e ter pelo menos 6 caracteres');
+                return false;
+            }
+            break;
+        case 15:
+            if (!document.querySelector('input[name="deficiencia"]:checked')) {
+                alert('Por favor, responda sobre acessibilidade');
+                return false;
+            }
+            break;
+        case 16:
+            if (!document.querySelector('input[name="raca"]:checked')) {
+                alert('Por favor, faça sua declaração de diversidade');
+                return false;
+            }
+            break;
+        case 21:
+            if (!document.getElementById('termos-participacao').checked) {
+                alert('Por favor, aceite os termos de participação');
+                return false;
+            }
+            break;
+        case 22:
+            if (!document.getElementById('processamento-dados').checked) {
+                alert('Por favor, autorize o processamento de dados');
+                return false;
+            }
+            break;
+        case 23:
+            if (!document.getElementById('uso-imagem').checked) {
+                alert('Por favor, autorize o uso de imagem');
+                return false;
+            }
+            break;
+        case 24:
+            if (!document.getElementById('alteracoes-evento').checked) {
+                alert('Por favor, confirme que está ciente das possíveis alterações');
+                return false;
+            }
+            break;
+    }
+    return true;
+}
+
+function showError(elementId, message) {
+    const errorElement = document.getElementById(elementId);
+    if (errorElement) {
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+    }
+}
+
+function saveCurrentQuestionData() {
+    switch(currentQuestion) {
+        case 1:
+            formData.nomeCompleto = document.getElementById('nomeCompleto').value.trim();
+            break;
+        case 2:
+            formData.cpf = document.getElementById('cpf').value.trim();
+            break;
+        case 3:
+            formData.email = document.getElementById('email').value.trim();
+            break;
+        case 4:
+            formData.senha = document.getElementById('senha').value;
+            break;
+        case 5:
+            formData.nomeSocial = document.getElementById('nomeSocial').value.trim();
+            break;
+        case 6:
+            formData.celular = document.getElementById('celular').value.trim();
+            formData.dataNascimento = document.getElementById('dataNascimento').value;
+            break;
+        case 7:
+            formData.pais = document.getElementById('pais').value;
+            formData.estado = document.getElementById('estado').value;
+            break;
+        case 8:
+            formData.vinculoInstitucional = document.getElementById('vinculoInstitucional').value;
+            break;
+        case 9:
+            formData.empresa = document.getElementById('empresa').value.trim();
+            break;
+        case 10:
+            formData.cargo = document.getElementById('cargo').value;
+            formData.outroCargo = document.getElementById('outroCargo').value.trim();
+            break;
+        case 11:
+            formData.lideranca = document.querySelector('input[name="lideranca"]:checked')?.value;
+            break;
+        case 12:
+            formData.servidor = document.querySelector('input[name="servidor"]:checked')?.value;
+            break;
+        case 13:
+            formData.participacao = document.querySelector('input[name="participacao"]:checked')?.value;
+            break;
+        case 14:
+            formData.areasInteresse = Array.from(document.querySelectorAll('input[name="interesse"]:checked')).map(cb => cb.value);
+            break;
+        case 15:
+            formData.deficiencia = document.querySelector('input[name="deficiencia"]:checked')?.value;
+            formData.tiposDeficiencia = Array.from(document.querySelectorAll('input[name="tipoDeficiencia"]:checked')).map(cb => cb.value);
+            break;
+        case 16:
+            formData.raca = document.querySelector('input[name="raca"]:checked')?.value;
+            break;
+        case 17:
+            formData.genero = document.querySelector('input[name="genero"]:checked')?.value;
+            break;
+        case 18:
+            formData.inovagov = document.querySelector('input[name="inovagov"]:checked')?.value;
+            break;
+        case 19:
+            formData.comunicacoes = document.querySelector('input[name="comunicacoes"]:checked')?.value;
+            break;
+        case 20:
+            formData.laboratorio = document.querySelector('input[name="laboratorio"]:checked')?.value;
+            formData.nomeLaboratorio = document.getElementById('nomeLaboratorio').value.trim();
+            break;
+        case 21:
+            formData.termosParticipacao = document.getElementById('termos-participacao').checked;
+            break;
+        case 22:
+            formData.compartilhamentoDados = document.getElementById('compartilhamento-dados').checked;
+            formData.processamentoDados = document.getElementById('processamento-dados').checked;
+            break;
+        case 23:
+            formData.usoImagem = document.getElementById('uso-imagem').checked;
+            break;
+        case 24:
+            formData.alteracoesEvento = document.getElementById('alteracoes-evento').checked;
+            break;
+    }
+}
+
+// NOVA FUNÇÃO: Enviar para API
+async function submitToAPI(data) {
+    try {
+        console.log('📤 Enviando dados para API...');
+        
+        const response = await fetch('http://localhost:3000/api/inscricoes', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Erro HTTP: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('✅ Sucesso na API:', result);
+        
+        return result;
+        
+    } catch (error) {
+        console.error('❌ Erro ao enviar para API:', error);
+        
+        // Fallback: salvar no localStorage se API falhar
+        console.log('💾 Salvando no localStorage como backup...');
+        saveToLocalStorage(data);
+        
+        throw error;
+    }
+}
+
+// NOVA FUNÇÃO: Backup no localStorage
+function saveToLocalStorage(data) {
+    try {
+        let submissions = JSON.parse(localStorage.getItem('semanaInovacao2025') || '[]');
+        data.id = 'LOCAL_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        data.dataInscricao = new Date().toLocaleString('pt-BR');
+        data.status = 'Local (Backup)';
+        submissions.push(data);
+        localStorage.setItem('semanaInovacao2025', JSON.stringify(submissions));
+        console.log('💾 Salvo no localStorage como backup');
+    } catch (error) {
+        console.error('❌ Erro ao salvar no localStorage:', error);
+    }
+}
+
+// FUNÇÃO MODIFICADA: finishForm
+async function finishForm() {
+    // Adicionar metadados
+    formData.id = 'INS_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    formData.dataInscricao = new Date().toLocaleString('pt-BR');
+    formData.status = 'Concluída';
+    
+    console.log('📋 Dados coletados:', formData);
+    
+    // Tentar enviar para a API
+    try {
+        const result = await submitToAPI(formData);
+        console.log('🎉 Inscrição enviada com sucesso!', result);
+        
+        // Mostrar mensagem de sucesso
+        showSuccessMessage('API');
+        
+    } catch (error) {
+        console.log('⚠️ Falha na API, mas dados salvos localmente');
+        
+        // Mostrar mensagem de backup
+        showSuccessMessage('LOCAL');
+    }
+    
+    // Remove active de todas as perguntas
+    document.querySelectorAll('.question').forEach(q => {
+        q.classList.remove('active');
+    });
+    
+    // Delay para mostrar tela final
+    setTimeout(() => {
+        document.getElementById('finalScreen').classList.add('active');
+        document.querySelector('.navigation').style.display = 'none';
+        document.getElementById('counter').style.display = 'none';
+        document.getElementById('progress').style.width = '100%';
+    }, 300);
+}
+
+// NOVA FUNÇÃO: Mostrar mensagem de sucesso
+function showSuccessMessage(type) {
+    const finalScreen = document.getElementById('finalScreen');
+    const successMsg = finalScreen.querySelector('p');
+    
+    if (type === 'API') {
+        successMsg.innerHTML = `
+            Parabéns! Sua inscrição na Semana de Inovação 2025 foi realizada com sucesso.<br><br>
+            ✅ <strong>Dados enviados para o servidor!</strong><br><br>
+            Em breve você receberá um e-mail de confirmação com todas as informações sobre o evento.<br><br>
+            Obrigado por fazer parte desta jornada de inovação! 🚀
+        `;
+    } else {
+        successMsg.innerHTML = `
+            Sua inscrição foi registrada!<br><br>
+            ⚠️ <strong>Dados salvos localmente (servidor temporariamente indisponível)</strong><br><br>
+            Suas informações estão seguras e serão processadas em breve.<br><br>
+            Obrigado por fazer parte desta jornada de inovação! 🚀
+        `;
+    }
+}
+
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+function isValidCPF(cpf) {
+    cpf = cpf.replace(/[^\d]/g, '');
+    return cpf.length === 11 && cpf !== '00000000000';
+}
+
+function formatCPF(input) {
+    let value = input.value.replace(/[^\d]/g, '');
+    value = value.replace(/(\d{3})(\d)/, '$1.$2');
+    value = value.replace(/(\d{3})(\d)/, '$1.$2');
+    value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    input.value = value;
+}
+
+function toggleEstados() {
+    const paisSelect = document.getElementById('pais');
+    const estadoSelect = document.getElementById('estado');
+    
+    if (paisSelect.value === 'BR') {
+        estadoSelect.style.display = 'block';
+    } else {
+        estadoSelect.style.display = 'none';
+        estadoSelect.value = '';
+    }
+}
+
+function toggleOutroCargo() {
+    const cargoSelect = document.getElementById('cargo');
+    const outroCargoInput = document.getElementById('outroCargo');
+    
+    if (cargoSelect.value === 'outro') {
+        outroCargoInput.style.display = 'block';
+    } else {
+        outroCargoInput.style.display = 'none';
+        outroCargoInput.value = '';
+    }
+}
+
+function toggleDeficiencia() {
+    const deficienciaSim = document.getElementById('deficiencia-sim').checked;
+    const tiposDeficiencia = document.getElementById('tiposDeficiencia');
+    
+    if (deficienciaSim) {
+        tiposDeficiencia.classList.add('show');
+    } else {
+        tiposDeficiencia.classList.remove('show');
+    }
+}
+
+function toggleLaboratorio() {
+    const laboratorioSim = document.getElementById('laboratorio-sim').checked;
+    const qualLaboratorio = document.getElementById('qualLaboratorio');
+    
+    if (laboratorioSim) {
+        qualLaboratorio.classList.add('show');
+    } else {
+        qualLaboratorio.classList.remove('show');
+        document.getElementById('nomeLaboratorio').value = '';
+    }
+}
+
+// Event listeners
+document.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+        nextQuestion();
+    }
+});
+
+// Formatação automática do CPF
+document.getElementById('cpf').addEventListener('input', function() {
+    formatCPF(this);
+});
+
+// Inicializar
+toggleEstados();
+    </script>
+</body>
+</html>
