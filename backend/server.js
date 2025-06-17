@@ -5,6 +5,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
+const fs = require('fs'); // ADICIONAR AQUI NO TOPO
 const rateLimit = require('express-rate-limit');
 const Database = require('./database');
 const Auth = require('./auth');
@@ -62,42 +63,72 @@ app.set('trust proxy', 1);
 // Rate limiting geral
 app.use('/api/', apiLimiter);
 
-// Servir arquivos estáticos (dashboard admin)
+// 🔍 DIAGNÓSTICO: Verificar estrutura de pastas
+console.log('\n🔍 ===== DIAGNÓSTICO DE PASTAS =====');
+console.log('📁 Pasta atual (backend):', __dirname);
+console.log('📁 Pasta pai:', path.dirname(__dirname));
+
+// Verificar pastas
+const possiveisCaminhos = [
+    path.join(__dirname, '..', 'frontend'),
+    path.join(__dirname, '../frontend'),
+    path.join(__dirname, 'frontend'),
+    path.join(path.dirname(__dirname), 'frontend')
+];
+
+let frontendEncontrado = false;
+let frontendPath = '';
+
+possiveisCaminhos.forEach((caminho, index) => {
+    console.log(`🔍 Testando caminho ${index + 1}: ${caminho}`);
+    if (fs.existsSync(caminho)) {
+        console.log(`✅ ENCONTRADO: ${caminho}`);
+        if (!frontendEncontrado) {
+            frontendPath = caminho;
+            frontendEncontrado = true;
+        }
+    } else {
+        console.log(`❌ Não existe: ${caminho}`);
+    }
+});
+
+console.log('===============================\n');
+
 // Servir arquivos estáticos (dashboard admin)
 app.use('/admin', express.static(path.join(__dirname, 'public')));
 
-// 🔧 CORREÇÃO: Servir frontend com verificação
-const fs = require('fs');
-const frontendPath = path.join(__dirname, '..', 'frontend');
-
-if (fs.existsSync(frontendPath)) {
-    console.log('✅ Frontend encontrado:', frontendPath);
+// 🔥 SERVIR FRONTEND COM DIAGNÓSTICO
+if (frontendEncontrado) {
+    console.log(`✅ FRONTEND: Servindo de ${frontendPath}`);
     app.use('/', express.static(frontendPath));
+    
+    // Verificar se index.html existe
+    const indexPath = path.join(frontendPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+        console.log(`✅ INDEX.HTML encontrado: ${indexPath}`);
+    } else {
+        console.log(`❌ INDEX.HTML não encontrado: ${indexPath}`);
+    }
 } else {
-    console.log('❌ Frontend não encontrado:', frontendPath);
-    // Fallback manual
+    console.log('❌ FRONTEND: Nenhuma pasta frontend encontrada!');
+    
+    // Rota manual de fallback
     app.get('/', (req, res) => {
+        console.log('🔄 Servindo fallback para rota principal');
         res.json({
             message: '📱 Sistema Semana de Inovação 2025',
-            status: 'Frontend em configuração',
+            status: 'Frontend não encontrado no servidor',
+            debug: {
+                backendPath: __dirname,
+                testados: possiveisCaminhos,
+                encontrado: 'Nenhum'
+            },
             dashboard: '/admin',
-            api: '/api/status'
+            api: '/api/status',
+            timestamp: new Date().toISOString()
         });
     });
 }
-// Rota específica para API de status (sobrescreve o static quando acessar /api)
-app.get('/api/status', (req, res) => {
-    res.json({ 
-        message: '🎉 API da Semana de Inovação 2025 funcionando!',
-        status: 'online',
-        database: 'conectado',
-        security: 'habilitada',
-        dashboard: `/admin`,
-        formulario: '/',
-        environment: process.env.NODE_ENV || 'development',
-        timestamp: new Date().toISOString()
-    });
-});
 
 // ROTA DE LOGIN COM RATE LIMITING E LOGS DE SEGURANÇA
 app.post('/api/login', loginLimiter, async (req, res) => {
@@ -337,6 +368,21 @@ app.get('/health', (req, res) => {
     });
 });
 
+// ROTA DE STATUS DETALHADO
+app.get('/api/status', (req, res) => {
+    res.json({
+        message: '🎉 API da Semana de Inovação 2025 funcionando!',
+        status: 'online',
+        database: 'conectado',
+        security: 'habilitada',
+        frontend: frontendEncontrado ? 'encontrado' : 'não encontrado',
+        frontendPath: frontendPath || 'nenhum',
+        dashboard: '/admin',
+        environment: process.env.NODE_ENV || 'development',
+        timestamp: new Date().toISOString()
+    });
+});
+
 // Rota 404 personalizada
 app.use('*', (req, res) => {
     const ip = req.ip || 'unknown';
@@ -344,8 +390,9 @@ app.use('*', (req, res) => {
     
     res.status(404).json({
         message: '🚫 Rota não encontrada',
+        path: req.originalUrl,
+        frontend: frontendEncontrado ? 'encontrado' : 'não encontrado',
         endpoints: {
-            'Formulário': '/',
             'Dashboard Admin': '/admin',
             'API Status': '/api/status',
             'API Inscrições': '/api/inscricoes',
@@ -384,7 +431,7 @@ async function iniciarServidor() {
             console.log('   🛡️  MODO SEGURO ATIVADO');
             console.log('================================');
             console.log(`🚀 Servidor: http://localhost:${PORT}`);
-            console.log(`📱 Formulário: http://localhost:${PORT}/`);
+            console.log(`📱 Frontend: ${frontendEncontrado ? '✅ Configurado' : '❌ Não encontrado'}`);
             console.log(`📋 Dashboard: http://localhost:${PORT}/admin`);
             console.log(`🔐 Login: ${process.env.ADMIN_EMAIL} / [senha protegida]`);
             console.log(`📊 API: http://localhost:${PORT}/api/inscricoes`);
