@@ -4,8 +4,8 @@ const jwt = require('jsonwebtoken');
 
 // Configurações seguras de ambiente
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-key-development-only';
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@semana-inovacao.com';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'thais@teste.com';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '123456';
 
 // Hash da senha do admin (calculado uma vez)
 const ADMIN_PASSWORD_HASH = bcrypt.hashSync(ADMIN_PASSWORD, 12);
