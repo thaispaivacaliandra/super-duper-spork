@@ -97,6 +97,15 @@ console.log('===============================\n');
 // Servir arquivos estáticos (dashboard admin)
 app.use('/admin', express.static(path.join(__dirname, 'public')));
 
+// Rotas específicas para admin (corrigir problema da barra)
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+app.get('/admin/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
 // 🔥 SERVIR FRONTEND COM DIAGNÓSTICO
 if (frontendEncontrado) {
     console.log(`✅ FRONTEND: Servindo de ${frontendPath}`);
