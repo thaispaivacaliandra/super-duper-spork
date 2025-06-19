@@ -12,7 +12,15 @@ const Database = require('./database');
 const Auth = require('./auth');
 
 const app = express();
-const PORT = process.env.PORT || 3000; // CORREÇÃO: Mudou de 10000 para 3000
+const PORT = process.env.PORT || 3000;
+
+// ==============================================
+// CONFIGURAÇÃO TRUST PROXY PARA RENDER
+// ==============================================
+if (process.env.NODE_ENV === 'production') {
+    app.set('trust proxy', 1);
+    console.log('✅ Trust proxy configurado para produção');
+}
 
 // ==============================================
 // DIAGNÓSTICO DE PASTAS (para debug)
@@ -51,23 +59,16 @@ app.use(helmet({
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
             scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-            scriptSrcAttr: ["'unsafe-inline'"], // CORREÇÃO: Permitir eventos inline
+            scriptSrcAttr: ["'unsafe-inline'"],
             imgSrc: ["'self'", "data:", "https:", "blob:"],
             connectSrc: ["'self'"],
         },
     },
 }));
 
-// CORREÇÃO: CORS mais permissivo para desenvolvimento
+// CORS configuração
 app.use(cors({
     origin: function (origin, callback) {
-        // Durante desenvolvimento, permitir qualquer origem
-        // CORREÇÃO: TRUST PROXY PARA RENDER
-        if (process.env.NODE_ENV === 'production') {
-            app.set('trust proxy', 1);
-            console.log('✅ Trust proxy configurado para produção');
-        }
-        // Em produção, usar lista específica
         const allowedOrigins = [
             'https://super-duper-spork-rfk8.onrender.com',
             'http://localhost:3000',
@@ -85,19 +86,19 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// CORREÇÃO: Rate limiting mais específico
+// Rate limiting
 const apiLimiter = rateLimit({
     windowMs: (parseInt(process.env.LOGIN_ATTEMPTS_WINDOW) || 15) * 60 * 1000,
     max: parseInt(process.env.LOGIN_ATTEMPTS_MAX) || 5,
     message: { sucesso: false, mensagem: 'Muitas tentativas de login. Tente novamente em 15 minutos.' },
     standardHeaders: true,
     legacyHeaders: false,
-    skip: (req) => req.path !== '/api/login' // Só aplicar no login
+    skip: (req) => req.path !== '/api/login'
 });
 
 const inscricaoLimiter = rateLimit({
-    windowMs: 1 * 60 * 1000, // 1 minuto
-    max: 3, // 3 inscrições por minuto
+    windowMs: 1 * 60 * 1000,
+    max: 3,
     message: { sucesso: false, mensagem: 'Muitas tentativas de inscrição. Tente novamente em 1 minuto.' },
     standardHeaders: true,
     legacyHeaders: false,
@@ -110,7 +111,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
-// CORREÇÃO: Middleware para logs de acesso melhorado
+// Middleware para logs
 app.use((req, res, next) => {
     const ip = req.ip || req.connection.remoteAddress || 'unknown';
     const timestamp = new Date().toISOString();
@@ -122,7 +123,7 @@ app.use((req, res, next) => {
 // CONFIGURAR SERVIR ARQUIVOS ESTÁTICOS
 // ==============================================
 
-// CORREÇÃO: Verificar se public existe e criar estrutura
+// Verificar pasta public
 const publicPath = path.join(__dirname, 'public');
 console.log('📁 Public path:', publicPath);
 if (fs.existsSync(publicPath)) {
@@ -138,7 +139,7 @@ if (fs.existsSync(publicPath)) {
     }
 }
 
-// CORREÇÃO: Servir frontend na raiz com fallback
+// Servir frontend
 if (frontendPath && fs.existsSync(frontendPath)) {
     app.use('/', express.static(frontendPath));
     console.log('✅ FRONTEND: Servindo de', frontendPath);
@@ -159,7 +160,6 @@ if (frontendPath && fs.existsSync(frontendPath)) {
 } else {
     console.log('❌ FRONTEND: Pasta não encontrada');
     
-    // Fallback: servir uma página básica se frontend não existir
     app.get('/', (req, res) => {
         res.send(`
             <html>
@@ -247,36 +247,34 @@ app.get('/api/status', (req, res) => {
         status: 'Sistema Online',
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
-        version: '2.0.1',
+        version: '2.0.2',
         frontend: frontendPath ? 'Configurado' : 'Não encontrado',
         database: 'SQLite',
         port: PORT
     });
 });
 
-// CORREÇÃO: Rota para submeter inscrição (pública) com melhor validação
+// CORREÇÃO PRINCIPAL: Rota para submeter inscrição com mapeamento direto
 app.post('/api/inscricoes', inscricaoLimiter, async (req, res) => {
     try {
-        const inscricaoData = req.body;
+        const dadosInscricao = req.body;
         const ip = req.ip || req.connection.remoteAddress || 'unknown';
         
         console.log(`📝 Nova inscrição de ${ip}:`, {
-            nome: inscricaoData.nomeCompleto || 'Não informado',
-            email: inscricaoData.email || 'Não informado'
+            nome: dadosInscricao.nomeCompleto || 'Não informado',
+            email: dadosInscricao.email || 'Não informado'
         });
         
         // Validação básica
-        if (!inscricaoData.nomeCompleto || !inscricaoData.email) {
+        if (!dadosInscricao.nomeCompleto || !dadosInscricao.email) {
             return res.status(400).json({
                 sucesso: false,
                 mensagem: 'Nome completo e email são obrigatórios'
             });
         }
         
-        // Mapear dados do frontend para formato do banco
-        const dadosFormatados = dadosInscricao;
-        
-        const resultado = await db.criarInscricao(dadosFormatados);
+        // CORREÇÃO: Usar dados diretos do frontend (sem remapeamento)
+        const resultado = await db.criarInscricao(dadosInscricao);
         
         if (resultado.sucesso) {
             console.log(`✅ Inscrição salva - ID: ${resultado.id}`);
@@ -375,7 +373,7 @@ app.get('/api/exportar', auth.middlewareAuth.bind(auth), async (req, res) => {
 // ROTAS DO FRONTEND
 // ==============================================
 
-// CORREÇÃO: Rota para a raiz (formulário) com fallback
+// Rota para a raiz (formulário) com fallback
 app.get('/', (req, res) => {
     if (frontendPath) {
         const indexPath = path.join(frontendPath, 'index.html');
