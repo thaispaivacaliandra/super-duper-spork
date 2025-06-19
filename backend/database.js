@@ -1,16 +1,13 @@
 const path = require('path');
-const sqlite3 = require('sqlite3').verbose(); // CORREÇÃO: usar sqlite3 em vez de sqlite
+const sqlite3 = require('sqlite3').verbose();
 
 class Database {
     constructor() {
-        this.dbPath = path.join(__dirname, process.env.DB_NAME || 'inscricoes.db');
+        const dbName = process.env.DB_NAME || 'inscricoes.db';
+        this.dbPath = path.join(__dirname, dbName);
         this.db = null;
-        this.maxConnections = process.env.MAX_DB_CONNECTIONS || 10;
-    }
-    
-    // Implementar pool de conexões para alta concorrência
-    async getConnection() {
-        // Lógica de pool aqui
+        
+        console.log(`💾 Database path: ${this.dbPath}`);
     }
 
     async conectar() {
@@ -34,19 +31,58 @@ class Database {
 
     async criarTabelas() {
         return new Promise((resolve, reject) => {
+            // CORREÇÃO: Schema atualizado para corresponder aos dados do frontend
             const sql = `
                 CREATE TABLE IF NOT EXISTS inscricoes (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    nome TEXT NOT NULL,
+                    
+                    -- Dados Básicos
+                    nome_completo TEXT NOT NULL,
+                    cpf TEXT,
                     email TEXT NOT NULL UNIQUE,
-                    telefone TEXT,
-                    orgao TEXT,
+                    senha TEXT,
+                    nome_social TEXT,
+                    
+                    -- Contato
+                    celular TEXT,
+                    data_nascimento DATE,
+                    
+                    -- Localização
+                    pais TEXT,
+                    estado TEXT,
+                    
+                    -- Profissional
+                    vinculo_institucional TEXT,
+                    empresa TEXT,
                     cargo TEXT,
-                    expectativas TEXT,
-                    experiencia_ai TEXT,
-                    ferramenta_ai TEXT,
-                    interesse_workshop TEXT,
-                    tema_interesse TEXT,
+                    outro_cargo TEXT,
+                    lideranca TEXT,
+                    servidor_publico TEXT,
+                    
+                    -- Participação
+                    tipo_participacao TEXT,
+                    areas_interesse TEXT, -- JSON
+                    
+                    -- Acessibilidade e Diversidade
+                    deficiencia TEXT,
+                    tipos_deficiencia TEXT, -- JSON
+                    raca TEXT,
+                    genero TEXT,
+                    
+                    -- Rede e Comunicação
+                    inovagov TEXT,
+                    comunicacoes TEXT,
+                    laboratorio TEXT,
+                    nome_laboratorio TEXT,
+                    
+                    -- Termos e Autorizações
+                    termos_participacao BOOLEAN,
+                    compartilhamento_dados BOOLEAN,
+                    processamento_dados BOOLEAN,
+                    uso_imagem BOOLEAN,
+                    alteracoes_evento BOOLEAN,
+                    
+                    -- Metadados
                     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
                     atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
@@ -66,30 +102,61 @@ class Database {
 
     async criarInscricao(dadosInscricao) {
         return new Promise((resolve, reject) => {
+            // CORREÇÃO: Receber dados com nomes corretos do frontend
             const {
-                nome, email, telefone, orgao, cargo, expectativas,
-                experiencia_ai, ferramenta_ai, interesse_workshop, tema_interesse
+                nomeCompleto, cpf, email, senha, nomeSocial,
+                celular, dataNascimento, pais, estado,
+                vinculoInstitucional, empresa, cargo, outroCargo,
+                lideranca, servidor, participacao, areasInteresse,
+                deficiencia, tiposDeficiencia, raca, genero,
+                inovagov, comunicacoes, laboratorio, nomeLaboratorio,
+                termosParticipacao, compartilhamentoDados, processamentoDados,
+                usoImagem, alteracoesEvento
             } = dadosInscricao;
 
             // Validações básicas
-            if (!nome || !email) {
+            if (!nomeCompleto || !email) {
                 return resolve({
                     sucesso: false,
-                    mensagem: 'Nome e email são obrigatórios'
+                    mensagem: 'Nome completo e email são obrigatórios'
                 });
             }
 
+            // CORREÇÃO: SQL com nomes de campos corretos
             const sql = `
                 INSERT INTO inscricoes (
-                    nome, email, telefone, orgao, cargo, expectativas,
-                    experiencia_ai, ferramenta_ai, interesse_workshop, tema_interesse
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    nome_completo, cpf, email, senha, nome_social,
+                    celular, data_nascimento, pais, estado,
+                    vinculo_institucional, empresa, cargo, outro_cargo,
+                    lideranca, servidor_publico, tipo_participacao, areas_interesse,
+                    deficiencia, tipos_deficiencia, raca, genero,
+                    inovagov, comunicacoes, laboratorio, nome_laboratorio,
+                    termos_participacao, compartilhamento_dados, processamento_dados,
+                    uso_imagem, alteracoes_evento
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
 
             const params = [
-                nome, email, telefone, orgao, cargo, expectativas,
-                experiencia_ai, ferramenta_ai, interesse_workshop, tema_interesse
+                nomeCompleto, cpf, email, senha, nomeSocial,
+                celular, dataNascimento, pais, estado,
+                vinculoInstitucional, empresa, cargo, outroCargo,
+                lideranca, servidor, participacao, 
+                areasInteresse ? JSON.stringify(areasInteresse) : null,
+                deficiencia, 
+                tiposDeficiencia ? JSON.stringify(tiposDeficiencia) : null,
+                raca, genero, inovagov, comunicacoes, laboratorio, nomeLaboratorio,
+                termosParticipacao ? 1 : 0,
+                compartilhamentoDados ? 1 : 0,
+                processamentoDados ? 1 : 0,
+                usoImagem ? 1 : 0,
+                alteracoesEvento ? 1 : 0
             ];
+
+            console.log('📝 Inserindo dados:', {
+                nome: nomeCompleto,
+                email: email,
+                campos_total: params.length
+            });
 
             this.db.run(sql, params, function(err) {
                 if (err) {
@@ -100,12 +167,15 @@ class Database {
                         });
                     } else {
                         console.error('❌ Erro ao inserir inscrição:', err.message);
+                        console.error('📊 SQL:', sql);
+                        console.error('📊 Params:', params);
                         resolve({
                             sucesso: false,
-                            mensagem: 'Erro ao salvar inscrição'
+                            mensagem: 'Erro ao salvar inscrição: ' + err.message
                         });
                     }
                 } else {
+                    console.log('✅ Inscrição salva com ID:', this.lastID);
                     resolve({
                         sucesso: true,
                         id: this.lastID,
@@ -126,8 +196,8 @@ class Database {
 
             if (search) {
                 const searchPattern = `%${search}%`;
-                sql += ' WHERE nome LIKE ? OR email LIKE ? OR orgao LIKE ?';
-                countSql += ' WHERE nome LIKE ? OR email LIKE ? OR orgao LIKE ?';
+                sql += ' WHERE nome_completo LIKE ? OR email LIKE ? OR empresa LIKE ?';
+                countSql += ' WHERE nome_completo LIKE ? OR email LIKE ? OR empresa LIKE ?';
                 params = [searchPattern, searchPattern, searchPattern];
             }
 
@@ -156,9 +226,24 @@ class Database {
                         const total = countResult.total;
                         const totalPages = Math.ceil(total / limit);
 
+                        // Converter campos JSON de volta para objetos
+                        const dadosProcessados = rows.map(row => {
+                            try {
+                                if (row.areas_interesse) {
+                                    row.areas_interesse = JSON.parse(row.areas_interesse);
+                                }
+                                if (row.tipos_deficiencia) {
+                                    row.tipos_deficiencia = JSON.parse(row.tipos_deficiencia);
+                                }
+                            } catch (e) {
+                                console.warn('⚠️ Erro ao processar JSON:', e.message);
+                            }
+                            return row;
+                        });
+
                         resolve({
                             sucesso: true,
-                            dados: rows,
+                            dados: dadosProcessados,
                             paginacao: {
                                 page: page,
                                 limit: limit,
@@ -178,27 +263,30 @@ class Database {
         return new Promise((resolve, reject) => {
             const estatisticas = {};
 
-            // Queries para diferentes estatísticas
             const queries = [
                 {
                     key: 'totalInscricoes',
                     sql: 'SELECT COUNT(*) as count FROM inscricoes'
                 },
                 {
-                    key: 'inscricoesPorOrgao',
-                    sql: 'SELECT orgao, COUNT(*) as count FROM inscricoes WHERE orgao IS NOT NULL GROUP BY orgao ORDER BY count DESC LIMIT 10'
+                    key: 'inscricoesPorEmpresa',
+                    sql: 'SELECT empresa, COUNT(*) as count FROM inscricoes WHERE empresa IS NOT NULL AND empresa != "" GROUP BY empresa ORDER BY count DESC LIMIT 10'
                 },
                 {
-                    key: 'experienciaAI',
-                    sql: 'SELECT experiencia_ai, COUNT(*) as count FROM inscricoes WHERE experiencia_ai IS NOT NULL GROUP BY experiencia_ai'
+                    key: 'tipoParticipacao',
+                    sql: 'SELECT tipo_participacao, COUNT(*) as count FROM inscricoes WHERE tipo_participacao IS NOT NULL GROUP BY tipo_participacao'
                 },
                 {
-                    key: 'interesseWorkshop',
-                    sql: 'SELECT interesse_workshop, COUNT(*) as count FROM inscricoes WHERE interesse_workshop IS NOT NULL GROUP BY interesse_workshop'
+                    key: 'vinculoInstitucional',
+                    sql: 'SELECT vinculo_institucional, COUNT(*) as count FROM inscricoes WHERE vinculo_institucional IS NOT NULL GROUP BY vinculo_institucional'
                 },
                 {
                     key: 'inscricoesPorDia',
                     sql: 'SELECT DATE(criado_em) as data, COUNT(*) as count FROM inscricoes GROUP BY DATE(criado_em) ORDER BY data DESC LIMIT 30'
+                },
+                {
+                    key: 'diversidade',
+                    sql: 'SELECT raca, COUNT(*) as count FROM inscricoes WHERE raca IS NOT NULL GROUP BY raca'
                 }
             ];
 
@@ -275,7 +363,6 @@ class Database {
                     });
                 } else {
                     if (formato === 'csv') {
-                        // Converter para CSV
                         if (rows.length === 0) {
                             return resolve({
                                 sucesso: true,
@@ -295,10 +382,24 @@ class Database {
                             dados: `${headers}\n${csvData}`
                         });
                     } else {
-                        // JSON (padrão)
+                        // Processar JSON para campos que foram armazenados como string
+                        const dadosProcessados = rows.map(row => {
+                            try {
+                                if (row.areas_interesse && typeof row.areas_interesse === 'string') {
+                                    row.areas_interesse = JSON.parse(row.areas_interesse);
+                                }
+                                if (row.tipos_deficiencia && typeof row.tipos_deficiencia === 'string') {
+                                    row.tipos_deficiencia = JSON.parse(row.tipos_deficiencia);
+                                }
+                            } catch (e) {
+                                console.warn('⚠️ Erro ao processar JSON no export:', e.message);
+                            }
+                            return row;
+                        });
+
                         resolve({
                             sucesso: true,
-                            dados: JSON.stringify(rows, null, 2)
+                            dados: JSON.stringify(dadosProcessados, null, 2)
                         });
                     }
                 }
