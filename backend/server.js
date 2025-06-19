@@ -84,7 +84,7 @@ function verificarAuth(req, res, next) {
 }
 
 // Servir arquivos estáticos
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, '..', 'frontend')));
 
 // ROTAS PÚBLICAS
 
@@ -397,7 +397,7 @@ app.get('/admin/', (req, res) => {
 
 // Rota principal
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(__dirname, '..', 'frontend', 'index.html'));
 });
 
 // Middleware de erro 404
