@@ -62,10 +62,11 @@ app.use(helmet({
 app.use(cors({
     origin: function (origin, callback) {
         // Durante desenvolvimento, permitir qualquer origem
-        if (process.env.NODE_ENV !== 'production') {
-            return callback(null, true);
+        // CORREÇÃO: TRUST PROXY PARA RENDER
+        if (process.env.NODE_ENV === 'production') {
+            app.set('trust proxy', 1);
+            console.log('✅ Trust proxy configurado para produção');
         }
-        
         // Em produção, usar lista específica
         const allowedOrigins = [
             'https://super-duper-spork-rfk8.onrender.com',
@@ -273,18 +274,7 @@ app.post('/api/inscricoes', inscricaoLimiter, async (req, res) => {
         }
         
         // Mapear dados do frontend para formato do banco
-        const dadosFormatados = {
-            nome: inscricaoData.nomeCompleto,
-            email: inscricaoData.email,
-            telefone: inscricaoData.celular || null,
-            orgao: inscricaoData.empresa || null,
-            cargo: inscricaoData.cargo === 'outro' ? inscricaoData.outroCargo : inscricaoData.cargo,
-            expectativas: inscricaoData.areasInteresse ? inscricaoData.areasInteresse.join(', ') : null,
-            experiencia_ai: inscricaoData.vinculoInstitucional || null,
-            ferramenta_ai: inscricaoData.laboratorio || null,
-            interesse_workshop: inscricaoData.participacao || null,
-            tema_interesse: inscricaoData.genero || null
-        };
+        const dadosFormatados = dadosInscricao;
         
         const resultado = await db.criarInscricao(dadosFormatados);
         
