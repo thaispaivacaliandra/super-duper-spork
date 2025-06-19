@@ -92,15 +92,16 @@ class Auth {
         }
     }
 
-    // Middleware melhorado para proteger rotas - CORREÇÃO DO IP
+    // Middleware melhorado - CORREÇÃO DEFINITIVA DO IP
     middlewareAuth(req, res, next) {
         const token = req.headers.authorization?.replace('Bearer ', '') || 
                      req.cookies?.authToken;
         
-        const clientIp = req.ip || req.connection.remoteAddress || 'unknown';
+        // CORREÇÃO: Usar variável separada para IP (não modificar req.ip)
+        const userIp = req.ip || req.connection.remoteAddress || req.socket.remoteAddress || 'unknown';
 
         if (!token) {
-            console.log(`🚫 Acesso negado - sem token de ${clientIp}`);
+            console.log(`🚫 Acesso negado - sem token de ${userIp}`);
             return res.status(401).json({ 
                 sucesso: false, 
                 mensagem: 'Token de acesso requerido' 
@@ -109,7 +110,7 @@ class Auth {
 
         const verificacao = new Auth().verificarToken(token);
         if (!verificacao.valido) {
-            console.log(`🚫 Token inválido de ${clientIp}: ${verificacao.mensagem}`);
+            console.log(`🚫 Token inválido de ${userIp}: ${verificacao.mensagem}`);
             return res.status(401).json({ 
                 sucesso: false, 
                 mensagem: verificacao.mensagem 
@@ -117,11 +118,11 @@ class Auth {
         }
 
         // Log de acesso autorizado
-        console.log(`✅ Acesso autorizado: ${verificacao.usuario.email} de ${clientIp}`);
+        console.log(`✅ Acesso autorizado: ${verificacao.usuario.email} de ${userIp}`);
         
-        // CORREÇÃO: Não tentar definir req.ip (é read-only), usar req.clientIp
+        // CORREÇÃO: Adicionar propriedades customizadas (não modificar req.ip)
         req.usuario = verificacao.usuario;
-        req.clientIp = clientIp;
+        req.userIp = userIp; // Nova propriedade customizada
         next();
     }
 
