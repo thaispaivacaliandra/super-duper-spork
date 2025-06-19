@@ -3,12 +3,14 @@ const sqlite3 = require('sqlite3').verbose(); // CORREÇÃO: usar sqlite3 em vez
 
 class Database {
     constructor() {
-        // Configurar caminho do banco baseado no ambiente
-        const dbName = process.env.DB_NAME || 'inscricoes.db';
-        this.dbPath = path.join(__dirname, dbName);
+        this.dbPath = path.join(__dirname, process.env.DB_NAME || 'inscricoes.db');
         this.db = null;
-        
-        console.log(`💾 Database path: ${this.dbPath}`);
+        this.maxConnections = process.env.MAX_DB_CONNECTIONS || 10;
+    }
+    
+    // Implementar pool de conexões para alta concorrência
+    async getConnection() {
+        // Lógica de pool aqui
     }
 
     async conectar() {

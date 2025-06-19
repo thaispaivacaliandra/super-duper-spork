@@ -368,6 +368,49 @@ app.use('*', (req, res) => {
     });
 });
 
+const { body, validationResult } = require('express-validator');
+
+// Middleware de validação para inscrições
+const validarInscricao = [
+    body('email').isEmail().normalizeEmail(),
+    body('nome').trim().isLength({ min: 2, max: 100 }),
+    body('telefone').optional().isMobilePhone('pt-BR'),
+    (req, res, next) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                sucesso: false,
+                mensagem: 'Dados inválidos',
+                erros: errors.array()
+            });
+        }
+        next();
+    }
+];
+
+
+// server.js - Middleware de erro mais robusto
+app.use((error, req, res, next) => {
+    const ip = req.ip || 'unknown';
+    const timestamp = new Date().toISOString();
+    
+    // Log estruturado para monitoramento
+    console.error(`[${timestamp}] ERROR ${ip}: ${error.message}`, {
+        stack: error.stack,
+        url: req.url,
+        method: req.method,
+        userAgent: req.get('User-Agent')
+    });
+    
+    // Não vazar informações em produção
+    const isDev = process.env.NODE_ENV !== 'production';
+    res.status(error.status || 500).json({
+        sucesso: false,
+        mensagem: isDev ? error.message : 'Erro interno do servidor',
+        ...(isDev && { stack: error.stack })
+    });
+});
+
 // ==============================================
 // INICIALIZAR SERVIDOR
 // ==============================================
