@@ -418,23 +418,12 @@ app.use((error, req, res, next) => {
 });
 
 // Inicializar servidor
-async function iniciarServidor() {
-    try {
-        await db.inicializar();
-        
-        app.listen(PORT, '0.0.0.0', () => {
-            console.log(`🚀 Servidor rodando na porta ${PORT}`);
-            console.log(`🌍 URL: http://localhost:${PORT}`);
-            console.log(`🔒 Autenticação: JWT com cookies httpOnly`);
-            console.log(`📊 Database: SQLite inicializado`);
-            console.log(`🛡️ Segurança: Rotas protegidas ativadas`);
-        });
-    } catch (error) {
-        console.error('❌ Erro ao inicializar servidor:', error);
-        process.exit(1);
-    }
-}
-
-iniciarServidor();
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Servidor rodando na porta ${PORT}`);
+    console.log(`🌍 URL: http://localhost:${PORT}`);
+    console.log(`🔒 Autenticação: JWT com cookies httpOnly`);
+    console.log(`📊 Database: SQLite inicializado`);
+    console.log(`🛡️ Segurança: Rotas protegidas ativadas`);
+});
 
 module.exports = app;
