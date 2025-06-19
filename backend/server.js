@@ -1,195 +1,188 @@
-require('dotenv').config();
 const express = require('express');
-const path = require('path');
-const fs = require('fs');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
-
-// Importar módulos locais
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const path = require('path');
 const Database = require('./database');
-const Auth = require('./auth');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
+const JWT_SECRET = process.env.JWT_SECRET || 'semana-inovacao-2025-secret-key';
 
-// ==============================================
-// CONFIGURAÇÃO TRUST PROXY PARA RENDER
-// ==============================================
-if (process.env.NODE_ENV === 'production') {
-    app.set('trust proxy', 1);
-    console.log('✅ Trust proxy configurado para produção');
-}
+// Inicializar banco de dados
+const db = new Database();
 
-// ==============================================
-// DIAGNÓSTICO DE PASTAS (para debug)
-// ==============================================
-console.log('🔍 ===== DIAGNÓSTICO DE PASTAS =====');
-console.log('📁 Pasta atual (backend):', __dirname);
-console.log('📁 Pasta pai:', path.dirname(__dirname));
+// Trust proxy para Render
+app.set('trust proxy', 1);
 
-// Testar diferentes caminhos para frontend
-const possiveisCaminhos = [
-    path.join(path.dirname(__dirname), 'frontend'),
-    path.join(__dirname, '../frontend'),
-    path.join(__dirname, 'frontend'),
-    path.join(path.dirname(__dirname), 'frontend')
-];
-
-let frontendPath = null;
-possiveisCaminhos.forEach((caminho, index) => {
-    console.log(`🔍 Testando caminho ${index + 1}: ${caminho}`);
-    if (fs.existsSync(caminho)) {
-        console.log(`✅ ENCONTRADO: ${caminho}`);
-        if (!frontendPath) frontendPath = caminho;
-    } else {
-        console.log(`❌ Não existe: ${caminho}`);
-    }
-});
-console.log('===============================');
-
-// ==============================================
-// CONFIGURAÇÕES DE SEGURANÇA
-// ==============================================
+// Middlewares de segurança
 app.use(helmet({
-    contentSecurityPolicy: {
-        directives: {
-            defaultSrc: ["'self'"],
-            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-            fontSrc: ["'self'", "https://fonts.gstatic.com"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-            scriptSrcAttr: ["'unsafe-inline'"],
-            imgSrc: ["'self'", "data:", "https:", "blob:"],
-            connectSrc: ["'self'"],
-        },
-    },
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false
 }));
 
-// CORS configuração
+app.use(cookieParser());
+
+// CORS configurado
 app.use(cors({
-    origin: function (origin, callback) {
-        const allowedOrigins = [
-            'https://super-duper-spork-rfk8.onrender.com',
-            'http://localhost:3000',
-            'http://localhost:10000'
-        ];
-        
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Não permitido pelo CORS'));
-        }
-    },
+    origin: true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
 }));
 
 // Rate limiting
-const apiLimiter = rateLimit({
-    windowMs: (parseInt(process.env.LOGIN_ATTEMPTS_WINDOW) || 15) * 60 * 1000,
-    max: parseInt(process.env.LOGIN_ATTEMPTS_MAX) || 5,
-    message: { sucesso: false, mensagem: 'Muitas tentativas de login. Tente novamente em 15 minutos.' },
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 100, // 100 requests por IP
+    message: { erro: 'Muitas tentativas. Tente novamente em 15 minutos.' },
     standardHeaders: true,
-    legacyHeaders: false,
-    skip: (req) => req.path !== '/api/login'
+    legacyHeaders: false
 });
 
-const inscricaoLimiter = rateLimit({
-    windowMs: 1 * 60 * 1000,
-    max: 3,
-    message: { sucesso: false, mensagem: 'Muitas tentativas de inscrição. Tente novamente em 1 minuto.' },
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 5, // 5 tentativas de login por IP
+    message: { erro: 'Muitas tentativas de login. Tente novamente em 15 minutos.' },
     standardHeaders: true,
-    legacyHeaders: false,
+    legacyHeaders: false
 });
 
-// ==============================================
-// MIDDLEWARES
-// ==============================================
+app.use(limiter);
+app.use('/api/login', loginLimiter);
+
+// Parse JSON
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(cookieParser());
 
-// Middleware para logs
-app.use((req, res, next) => {
-    const ip = req.ip || req.connection.remoteAddress || 'unknown';
-    const timestamp = new Date().toISOString();
-    console.log(`[${timestamp}] ${req.method} ${req.path} de ${ip}`);
-    next();
+// Middleware de autenticação
+function verificarAuth(req, res, next) {
+    const token = req.cookies.authToken;
+    
+    if (!token) {
+        return res.status(401).json({ 
+            sucesso: false, 
+            mensagem: 'Acesso negado. Login necessário.' 
+        });
+    }
+    
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.user = decoded;
+        console.log(`✅ Acesso autorizado: ${decoded.email} de ${req.ip}`);
+        next();
+    } catch (error) {
+        console.log(`❌ Token inválido de ${req.ip}`);
+        res.status(401).json({ 
+            sucesso: false, 
+            mensagem: 'Token inválido' 
+        });
+    }
+}
+
+// Servir arquivos estáticos
+app.use(express.static(path.join(__dirname, 'public')));
+
+// ROTAS PÚBLICAS
+
+// Status da API
+app.get('/api/status', (req, res) => {
+    res.json({
+        status: 'Sistema Online',
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development',
+        version: '2.0.2',
+        frontend: 'Configurado',
+        database: 'SQLite',
+        port: PORT.toString()
+    });
 });
 
-// ==============================================
-// CONFIGURAR SERVIR ARQUIVOS ESTÁTICOS
-// ==============================================
-
-// Verificar pasta public
-const publicPath = path.join(__dirname, 'public');
-console.log('📁 Public path:', publicPath);
-if (fs.existsSync(publicPath)) {
-    app.use('/admin', express.static(publicPath));
-    console.log('✅ ADMIN: Servindo de', publicPath);
-} else {
-    console.log('❌ ADMIN: Pasta public não encontrada - criando...');
+// Rota de inscrição (PÚBLICA)
+app.post('/api/inscricoes', async (req, res) => {
     try {
-        fs.mkdirSync(publicPath, { recursive: true });
-        console.log('✅ ADMIN: Pasta public criada');
+        const clientIP = req.ip || req.connection.remoteAddress;
+        console.log(`📝 Nova inscrição de ${clientIP}:`, { 
+            nome: req.body.nome_completo, 
+            email: req.body.email 
+        });
+
+        // Validar dados obrigatórios
+        const { nome_completo, email, cpf } = req.body;
+        
+        if (!nome_completo || !email || !cpf) {
+            return res.status(400).json({
+                sucesso: false,
+                mensagem: 'Nome completo, email e CPF são obrigatórios'
+            });
+        }
+
+        // Verificar se email já existe
+        const emailExiste = await db.verificarEmailExiste(email);
+        if (emailExiste) {
+            console.log(`❌ Erro ao salvar inscrição: Este email já está cadastrado`);
+            return res.status(400).json({
+                sucesso: false,
+                mensagem: 'Este email já está cadastrado'
+            });
+        }
+
+        // Verificar se CPF já existe
+        const cpfExiste = await db.verificarCPFExiste(cpf);
+        if (cpfExiste) {
+            console.log(`❌ Erro ao salvar inscrição: Este CPF já está cadastrado`);
+            return res.status(400).json({
+                sucesso: false,
+                mensagem: 'Este CPF já está cadastrado'
+            });
+        }
+
+        // Preparar dados para inserção
+        const dadosInscricao = {
+            ...req.body,
+            criado_em: new Date().toISOString(),
+            atualizado_em: new Date().toISOString()
+        };
+
+        console.log('📝 Inserindo dados:', {
+            nome: dadosInscricao.nome_completo,
+            email: dadosInscricao.email,
+            campos_total: Object.keys(dadosInscricao).length
+        });
+
+        // Salvar no banco
+        const id = await db.criarInscricao(dadosInscricao);
+        
+        console.log(`✅ Inscrição salva com ID: ${id}`);
+        console.log(`✅ Inscrição salva - ID: ${id}`);
+
+        res.status(201).json({
+            sucesso: true,
+            mensagem: 'Inscrição realizada com sucesso!',
+            id: id
+        });
+
     } catch (error) {
-        console.error('❌ Erro ao criar pasta public:', error);
+        console.error('❌ Erro ao processar inscrição:', error);
+        res.status(500).json({
+            sucesso: false,
+            mensagem: 'Erro interno do servidor'
+        });
     }
-}
+});
 
-// Servir frontend
-if (frontendPath && fs.existsSync(frontendPath)) {
-    app.use('/', express.static(frontendPath));
-    console.log('✅ FRONTEND: Servindo de', frontendPath);
-    
-    const indexPath = path.join(frontendPath, 'index.html');
-    if (fs.existsSync(indexPath)) {
-        console.log('✅ INDEX.HTML encontrado:', indexPath);
-    } else {
-        console.log('❌ INDEX.HTML não encontrado');
-    }
-    
-    // Servir imagens
-    const imagesPath = path.join(frontendPath, 'images');
-    if (fs.existsSync(imagesPath)) {
-        app.use('/images', express.static(imagesPath));
-        console.log('✅ IMAGES: Servindo de', imagesPath);
-    }
-} else {
-    console.log('❌ FRONTEND: Pasta não encontrada');
-    
-    app.get('/', (req, res) => {
-        res.send(`
-            <html>
-                <head><title>Semana de Inovação 2025</title></head>
-                <body style="font-family: Arial; text-align: center; padding: 50px;">
-                    <h1>🚀 Semana de Inovação 2025</h1>
-                    <p>Sistema temporariamente em manutenção</p>
-                    <p><a href="/api/status">Ver Status da API</a></p>
-                </body>
-            </html>
-        `);
-    });
-}
-
-// ==============================================
-// INICIALIZAR COMPONENTES
-// ==============================================
-const db = new Database();
-const auth = new Auth();
-
-// ==============================================
-// ROTAS DE AUTENTICAÇÃO
-// ==============================================
-app.post('/api/login', apiLimiter, async (req, res) => {
+// Login (PÚBLICO)
+app.post('/api/login', async (req, res) => {
     try {
         const { email, senha } = req.body;
-        const ip = req.ip || req.connection.remoteAddress || 'unknown';
+        const clientIP = req.ip || req.connection.remoteAddress;
         
-        console.log(`🔐 Tentativa de login: ${email} de ${ip}`);
-        
+        console.log(`🔐 Tentativa de login: ${email} de ${clientIP}`);
+        console.log(`🔐 Tentativa de login: ${email} de ${clientIP}`);
+
         if (!email || !senha) {
             return res.status(400).json({
                 sucesso: false,
@@ -197,24 +190,64 @@ app.post('/api/login', apiLimiter, async (req, res) => {
             });
         }
 
-        const resultado = await auth.verificarLogin(email, senha, ip);
+        // Buscar usuário
+        const usuario = await db.buscarUsuarioPorEmail(email);
         
-        if (resultado.sucesso) {
-            res.cookie('authToken', resultado.token, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'strict',
-                maxAge: 2 * 60 * 60 * 1000
+        if (!usuario) {
+            console.log(`❌ Email não encontrado: ${email}`);
+            console.log(`❌ Login falhado: ${email} - Credenciais inválidas`);
+            return res.status(401).json({
+                sucesso: false,
+                mensagem: 'Credenciais inválidas'
             });
-            console.log(`✅ Login bem-sucedido: ${email}`);
-        } else {
-            console.log(`❌ Login falhado: ${email} - ${resultado.mensagem}`);
         }
+
+        // Verificar senha
+        const senhaValida = await bcrypt.compare(senha, usuario.senha);
         
-        res.status(resultado.sucesso ? 200 : 401).json(resultado);
-        
+        if (!senhaValida) {
+            console.log(`❌ Senha incorreta para: ${email}`);
+            console.log(`❌ Login falhado: ${email} - Credenciais inválidas`);
+            return res.status(401).json({
+                sucesso: false,
+                mensagem: 'Credenciais inválidas'
+            });
+        }
+
+        // Gerar token JWT
+        const token = jwt.sign(
+            { 
+                id: usuario.id, 
+                email: usuario.email,
+                nome: usuario.nome_completo
+            },
+            JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+
+        // Definir cookie httpOnly
+        res.cookie('authToken', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 24 * 60 * 60 * 1000 // 24 horas
+        });
+
+        console.log(`✅ Login bem-sucedido: ${email} de ${clientIP}`);
+        console.log(`✅ Login bem-sucedido: ${email}`);
+
+        res.json({
+            sucesso: true,
+            mensagem: 'Login realizado com sucesso',
+            usuario: {
+                id: usuario.id,
+                email: usuario.email,
+                nome: usuario.nome_completo
+            }
+        });
+
     } catch (error) {
-        console.error('❌ Erro no endpoint de login:', error);
+        console.error('❌ Erro no login:', error);
         res.status(500).json({
             sucesso: false,
             mensagem: 'Erro interno do servidor'
@@ -222,308 +255,186 @@ app.post('/api/login', apiLimiter, async (req, res) => {
     }
 });
 
-app.post('/api/logout', (req, res) => {
-    const ip = req.ip || req.connection.remoteAddress || 'unknown';
-    console.log(`🔓 Logout de ${ip}`);
-    
-    res.clearCookie('authToken');
-    res.json({ sucesso: true, mensagem: 'Logout realizado com sucesso' });
-});
+// APLICAR PROTEÇÃO DE AUTENTICAÇÃO NAS ROTAS SENSÍVEIS
+app.use('/api/inscricoes', verificarAuth);
+app.use('/api/estatisticas', verificarAuth);
+app.use('/api/exportar', verificarAuth);
+app.use('/api/verificar-token', verificarAuth);
 
-app.get('/api/verificar-token', auth.middlewareAuth.bind(auth), (req, res) => {
+// ROTAS PROTEGIDAS (SOMENTE ADMIN)
+
+// Verificar token
+app.get('/api/verificar-token', (req, res) => {
+    // Se chegou aqui, o token é válido (verificado no middleware)
     res.json({
         sucesso: true,
-        usuario: req.usuario
+        usuario: {
+            id: req.user.id,
+            email: req.user.email,
+            nome: req.user.nome
+        }
     });
 });
 
-// ==============================================
-// ROTAS DA API
-// ==============================================
-
-// Rota de status (pública)
-app.get('/api/status', (req, res) => {
-    res.json({
-        status: 'Sistema Online',
-        timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || 'development',
-        version: '2.0.2',
-        frontend: frontendPath ? 'Configurado' : 'Não encontrado',
-        database: 'SQLite',
-        port: PORT
-    });
-});
-
-// CORREÇÃO PRINCIPAL: Rota para submeter inscrição com mapeamento direto
-app.post('/api/inscricoes', inscricaoLimiter, async (req, res) => {
-    try {
-        const dadosInscricao = req.body;
-        const ip = req.ip || req.connection.remoteAddress || 'unknown';
-        
-        console.log(`📝 Nova inscrição de ${ip}:`, {
-            nome: dadosInscricao.nomeCompleto || 'Não informado',
-            email: dadosInscricao.email || 'Não informado'
-        });
-        
-        // Validação básica
-        if (!dadosInscricao.nomeCompleto || !dadosInscricao.email) {
-            return res.status(400).json({
-                sucesso: false,
-                mensagem: 'Nome completo e email são obrigatórios'
-            });
-        }
-        
-        // CORREÇÃO: Usar dados diretos do frontend (sem remapeamento)
-        const resultado = await db.criarInscricao(dadosInscricao);
-        
-        if (resultado.sucesso) {
-            console.log(`✅ Inscrição salva - ID: ${resultado.id}`);
-        } else {
-            console.log(`❌ Erro ao salvar inscrição: ${resultado.mensagem}`);
-        }
-        
-        res.status(resultado.sucesso ? 201 : 400).json(resultado);
-        
-    } catch (error) {
-        console.error('❌ Erro no endpoint de inscrições:', error);
-        res.status(500).json({
-            sucesso: false,
-            mensagem: 'Erro interno do servidor',
-            erro: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
-    }
-});
-
-// ROTAS PROTEGIDAS (precisam de autenticação)
-app.get('/api/inscricoes', auth.middlewareAuth.bind(auth), async (req, res) => {
+// Listar inscrições (PROTEGIDA)
+app.get('/api/inscricoes', async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 50;
         const search = req.query.search || '';
-        
+
         const resultado = await db.listarInscricoes(page, limit, search);
-        res.json(resultado);
         
+        // REMOVER SENHAS das respostas por segurança
+        const inscricoesSemSenha = resultado.inscricoes.map(ins => {
+            const { senha, ...dadosSeguros } = ins;
+            return dadosSeguros;
+        });
+
+        res.json({
+            sucesso: true,
+            dados: inscricoesSemSenha, // Dados sem senhas
+            paginacao: resultado.paginacao
+        });
+
     } catch (error) {
         console.error('❌ Erro ao listar inscrições:', error);
         res.status(500).json({
             sucesso: false,
-            mensagem: 'Erro interno do servidor'
+            mensagem: 'Erro ao carregar inscrições'
         });
     }
 });
 
-app.get('/api/estatisticas', auth.middlewareAuth.bind(auth), async (req, res) => {
+// Estatísticas (PROTEGIDA)
+app.get('/api/estatisticas', async (req, res) => {
     try {
         const stats = await db.obterEstatisticas();
-        res.json(stats);
         
+        res.json({
+            sucesso: true,
+            dados: stats
+        });
+
     } catch (error) {
         console.error('❌ Erro ao obter estatísticas:', error);
         res.status(500).json({
             sucesso: false,
-            mensagem: 'Erro interno do servidor'
+            mensagem: 'Erro ao carregar estatísticas'
         });
     }
 });
 
-app.delete('/api/inscricoes/:id', auth.middlewareAuth.bind(auth), async (req, res) => {
+// Exportar dados (PROTEGIDA)
+app.get('/api/exportar', async (req, res) => {
     try {
-        const id = req.params.id;
-        const resultado = await db.deletarInscricao(id);
+        const formato = req.query.formato || 'csv';
         
-        if (resultado.sucesso) {
-            console.log(`🗑️ Inscrição ${id} deletada por ${req.usuario.email}`);
+        if (formato === 'csv') {
+            const inscricoes = await db.listarTodasInscricoes();
+            
+            // REMOVER SENHAS do export por segurança
+            const inscricoesSemSenha = inscricoes.map(ins => {
+                const { senha, ...dadosSeguros } = ins;
+                return dadosSeguros;
+            });
+            
+            // Gerar CSV
+            const headers = Object.keys(inscricoesSemSenha[0] || {});
+            const csvContent = [
+                headers.join(','),
+                ...inscricoesSemSenha.map(row => 
+                    headers.map(header => {
+                        const value = row[header];
+                        // Escapar vírgulas e aspas
+                        return typeof value === 'string' && (value.includes(',') || value.includes('"')) 
+                            ? `"${value.replace(/"/g, '""')}"` 
+                            : value;
+                    }).join(',')
+                )
+            ].join('\n');
+
+            res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+            res.setHeader('Content-Disposition', `attachment; filename=inscricoes-${new Date().toISOString().split('T')[0]}.csv`);
+            res.send('\ufeff' + csvContent); // BOM para UTF-8
+        } else {
+            res.status(400).json({
+                sucesso: false,
+                mensagem: 'Formato não suportado'
+            });
         }
-        
-        res.json(resultado);
-        
+
     } catch (error) {
-        console.error('❌ Erro ao deletar inscrição:', error);
+        console.error('❌ Erro ao exportar:', error);
         res.status(500).json({
             sucesso: false,
-            mensagem: 'Erro interno do servidor'
+            mensagem: 'Erro ao exportar dados'
         });
     }
 });
 
-app.get('/api/exportar', auth.middlewareAuth.bind(auth), async (req, res) => {
-    try {
-        const formato = req.query.formato || 'json';
-        const resultado = await db.exportarDados(formato);
-        
-        if (resultado.sucesso) {
-            res.setHeader('Content-Type', 'application/json');
-            res.setHeader('Content-Disposition', `attachment; filename="inscricoes_${new Date().toISOString().split('T')[0]}.${formato}"`);
-            res.send(resultado.dados);
-        } else {
-            res.status(400).json(resultado);
-        }
-        
-    } catch (error) {
-        console.error('❌ Erro ao exportar dados:', error);
-        res.status(500).json({
-            sucesso: false,
-            mensagem: 'Erro interno do servidor'
-        });
-    }
+// Logout
+app.post('/api/logout', (req, res) => {
+    res.clearCookie('authToken');
+    res.json({
+        sucesso: true,
+        mensagem: 'Logout realizado com sucesso'
+    });
 });
 
-// ==============================================
-// ROTAS DO FRONTEND
-// ==============================================
-
-// Rota para a raiz (formulário) com fallback
-app.get('/', (req, res) => {
-    if (frontendPath) {
-        const indexPath = path.join(frontendPath, 'index.html');
-        if (fs.existsSync(indexPath)) {
-            res.sendFile(indexPath);
-        } else {
-            res.status(404).send(`
-                <html>
-                    <head><title>Página não encontrada</title></head>
-                    <body style="font-family: Arial; text-align: center; padding: 50px;">
-                        <h1>📄 Página não encontrada</h1>
-                        <p>O arquivo index.html não foi encontrado em: ${indexPath}</p>
-                        <p><a href="/api/status">Ver Status do Sistema</a></p>
-                    </body>
-                </html>
-            `);
-        }
-    } else {
-        res.status(404).send(`
-            <html>
-                <head><title>Frontend não configurado</title></head>
-                <body style="font-family: Arial; text-align: center; padding: 50px;">
-                    <h1>⚙️ Frontend não configurado</h1>
-                    <p>Pasta frontend não encontrada</p>
-                    <p><a href="/api/status">Ver Status do Sistema</a></p>
-                </body>
-            </html>
-        `);
-    }
-});
-
-// Rotas específicas para admin
+// Rota do admin
 app.get('/admin', (req, res) => {
     const adminPath = path.join(__dirname, 'public', 'admin.html');
     console.log('📄 Tentando acessar admin path:', adminPath);
-    if (fs.existsSync(adminPath)) {
-        res.sendFile(adminPath);
-    } else {
-        res.status(404).send(`
-            <html>
-                <head><title>Dashboard Admin</title></head>
-                <body style="font-family: Arial; text-align: center; padding: 50px;">
-                    <h1>🔧 Dashboard em desenvolvimento</h1>
-                    <p>Arquivo admin.html não encontrado em: ${adminPath}</p>
-                    <p><a href="/api/status">Ver Status do Sistema</a></p>
-                    <p><a href="/">Voltar ao formulário</a></p>
-                </body>
-            </html>
-        `);
-    }
+    res.sendFile(adminPath);
 });
 
 app.get('/admin/', (req, res) => {
-    res.redirect('/admin');
+    const adminPath = path.join(__dirname, 'public', 'admin.html');
+    console.log('📄 Tentando acessar admin path:', adminPath);
+    res.sendFile(adminPath);
 });
 
-// ==============================================
-// MIDDLEWARE DE ERRO GLOBAL
-// ==============================================
-app.use((error, req, res, next) => {
-    const ip = req.ip || req.connection.remoteAddress || 'unknown';
-    const timestamp = new Date().toISOString();
-    
-    console.error(`[${timestamp}] 💥 ERRO GLOBAL de ${ip}:`, error.message);
-    console.error(error.stack);
-    
-    res.status(error.status || 500).json({
-        sucesso: false,
-        mensagem: process.env.NODE_ENV === 'production' 
-            ? 'Erro interno do servidor' 
-            : error.message,
-        timestamp: timestamp
-    });
+// Rota principal
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// ==============================================
-// ROTA 404 (deve ser a última)
-// ==============================================
+// Middleware de erro 404
 app.use('*', (req, res) => {
-    const ip = req.ip || req.connection.remoteAddress || 'unknown';
-    console.log(`🚫 Rota não encontrada: ${req.originalUrl} de ${ip}`);
     res.status(404).json({
         sucesso: false,
-        mensagem: 'Rota não encontrada',
-        rota: req.originalUrl,
-        metodo: req.method
+        mensagem: 'Rota não encontrada'
     });
 });
 
-// ==============================================
-// INICIALIZAR SERVIDOR
-// ==============================================
-const iniciarServidor = async () => {
+// Middleware de tratamento de erros
+app.use((error, req, res, next) => {
+    console.error('❌ Erro não tratado:', error);
+    res.status(500).json({
+        sucesso: false,
+        mensagem: 'Erro interno do servidor'
+    });
+});
+
+// Inicializar servidor
+async function iniciarServidor() {
     try {
-        console.log('🚀 Iniciando servidor...');
+        await db.inicializar();
         
-        // Conectar banco de dados
-        await db.conectar();
-        console.log('📊 Banco de dados conectado!');
-        
-        // Criar tabelas
-        await db.criarTabelas();
-        console.log('✅ Tabela de inscrições criada/verificada!');
-        
-        // Iniciar servidor
-        const server = app.listen(PORT, '0.0.0.0', () => {
-            console.log('🔒 ================================');
-            console.log('   SEMANA DE INOVAÇÃO 2025');
-            console.log('   🛡️  MODO SEGURO ATIVADO');
-            console.log('================================');
-            console.log(`🚀 Servidor: http://localhost:${PORT}`);
-            console.log(`📱 Frontend: ${frontendPath ? '✅ Configurado' : '❌ Não encontrado'}`);
-            console.log(`📋 Dashboard: http://localhost:${PORT}/admin`);
-            console.log(`🔐 Login: ${process.env.ADMIN_EMAIL || 'thais@teste.com'} / [senha protegida]`);
-            console.log(`📊 API Status: http://localhost:${PORT}/api/status`);
-            console.log(`📝 API Inscrições: http://localhost:${PORT}/api/inscricoes`);
-            console.log('💾 Banco: SQLite conectado');
-            console.log('🛡️  Rate Limiting: ✅ Ativo');
-            console.log('🔒 JWT Security: ✅ Ativo');
-            console.log('📝 Logs Seguros: ✅ Ativo');
-            console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-            console.log('================================');
+        app.listen(PORT, '0.0.0.0', () => {
+            console.log(`🚀 Servidor rodando na porta ${PORT}`);
+            console.log(`🌍 URL: http://localhost:${PORT}`);
+            console.log(`🔒 Autenticação: JWT com cookies httpOnly`);
+            console.log(`📊 Database: SQLite inicializado`);
+            console.log(`🛡️ Segurança: Rotas protegidas ativadas`);
         });
-        
-        // Graceful shutdown
-        process.on('SIGTERM', () => {
-            console.log('🔄 Recebido SIGTERM, fechando servidor...');
-            server.close(() => {
-                console.log('✅ Servidor fechado');
-                db.fechar();
-                process.exit(0);
-            });
-        });
-        
     } catch (error) {
         console.error('❌ Erro ao inicializar servidor:', error);
         process.exit(1);
     }
-};
+}
 
-// Tratar erros não capturados
-process.on('uncaughtException', (error) => {
-    console.error('💥 Uncaught Exception:', error);
-    process.exit(1);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('💥 Unhandled Rejection em:', promise, 'razão:', reason);
-    process.exit(1);
-});
-
-// Inicializar
 iniciarServidor();
+
+module.exports = app;
