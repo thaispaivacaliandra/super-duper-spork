@@ -2,8 +2,8 @@ require('dotenv').config();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// Configurações seguras de ambiente
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-key-development-only';
+// Configurações seguras - APENAS fallbacks para desenvolvimento local
+const JWT_SECRET = process.env.JWT_SECRET || 'desenvolvimento-local-apenas';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'thais@teste.com';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '123456';
 
@@ -92,15 +92,15 @@ class Auth {
         }
     }
 
-    // Middleware melhorado para proteger rotas
+    // Middleware melhorado para proteger rotas - CORREÇÃO DO IP
     middlewareAuth(req, res, next) {
         const token = req.headers.authorization?.replace('Bearer ', '') || 
                      req.cookies?.authToken;
         
-        const ip = req.ip || req.connection.remoteAddress || 'unknown';
+        const clientIp = req.ip || req.connection.remoteAddress || 'unknown';
 
         if (!token) {
-            console.log(`🚫 Acesso negado - sem token de ${ip}`);
+            console.log(`🚫 Acesso negado - sem token de ${clientIp}`);
             return res.status(401).json({ 
                 sucesso: false, 
                 mensagem: 'Token de acesso requerido' 
@@ -109,7 +109,7 @@ class Auth {
 
         const verificacao = new Auth().verificarToken(token);
         if (!verificacao.valido) {
-            console.log(`🚫 Token inválido de ${ip}: ${verificacao.mensagem}`);
+            console.log(`🚫 Token inválido de ${clientIp}: ${verificacao.mensagem}`);
             return res.status(401).json({ 
                 sucesso: false, 
                 mensagem: verificacao.mensagem 
@@ -117,10 +117,11 @@ class Auth {
         }
 
         // Log de acesso autorizado
-        console.log(`✅ Acesso autorizado: ${verificacao.usuario.email} de ${ip}`);
+        console.log(`✅ Acesso autorizado: ${verificacao.usuario.email} de ${clientIp}`);
         
+        // CORREÇÃO: Não tentar definir req.ip (é read-only), usar req.clientIp
         req.usuario = verificacao.usuario;
-        req.ip = ip;
+        req.clientIp = clientIp;
         next();
     }
 
