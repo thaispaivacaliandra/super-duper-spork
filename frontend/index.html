@@ -236,6 +236,27 @@
             transform: translateY(-1px);
         }
 
+        /* Remover popup de acessibilidade do browser */
+*:focus {
+    outline: none !important;
+}
+
+/* Alternativa mais específica se o acima não funcionar */
+input:focus,
+select:focus,
+textarea:focus,
+button:focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* Se ainda aparecer, forçar remoção */
+[role="dialog"],
+[aria-live],
+.accessibility-popup {
+    display: none !important;
+}
+
         input::placeholder,
         textarea::placeholder {
             color: rgba(42, 94, 44, 0.5);

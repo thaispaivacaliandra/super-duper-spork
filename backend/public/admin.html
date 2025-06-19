@@ -374,202 +374,305 @@
     </div>
 
     <script>
-        // Token de autenticação
-        let authToken = localStorage.getItem('authToken');
+       // Token de autenticação
+let authToken = null;
 
-        // Verificar se já está logado
-        if (authToken) {
-            verificarToken();
-        }
+// Verificar se já está logado ao carregar
+document.addEventListener('DOMContentLoaded', function() {
+    verificarToken();
+});
 
-        // Login
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const email = document.getElementById('email').value;
-            const senha = document.getElementById('senha').value;
-            
-            try {
-                const response = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ email, senha })
-                });
-                
-                const result = await response.json();
-                
-                if (result.sucesso) {
-                    localStorage.setItem('authToken', result.token);
-                    authToken = result.token;
-                    mostrarDashboard();
-                } else {
-                    mostrarErro(result.mensagem);
-                }
-                
-            } catch (error) {
-                mostrarErro('Erro de conexão');
-            }
+// Login
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const email = document.getElementById('email').value;
+    const senha = document.getElementById('senha').value;
+    
+    try {
+        const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include', // IMPORTANTE: Incluir cookies
+            body: JSON.stringify({ email, senha })
         });
+        
+        const result = await response.json();
+        
+        if (result.sucesso) {
+            authToken = 'logged_in'; // Usando cookies, não token
+            document.getElementById('userEmail').textContent = email;
+            mostrarDashboard();
+        } else {
+            mostrarErro(result.mensagem);
+        }
+        
+    } catch (error) {
+        console.error('Erro no login:', error);
+        mostrarErro('Erro de conexão');
+    }
+});
 
-        async function verificarToken() {
-            try {
-                const response = await fetch('/api/verificar-token', {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
-                });
+async function verificarToken() {
+    try {
+        const response = await fetch('/api/verificar-token', {
+            credentials: 'include' // IMPORTANTE: Incluir cookies
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            if (result.sucesso) {
+                authToken = 'logged_in';
+                document.getElementById('userEmail').textContent = result.usuario.email;
+                mostrarDashboard();
+            }
+        } else {
+            mostrarLogin();
+        }
+    } catch (error) {
+        console.error('Erro ao verificar token:', error);
+        mostrarLogin();
+    }
+}
+
+function mostrarDashboard() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    carregarDados();
+}
+
+function mostrarLogin() {
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('dashboard').style.display = 'none';
+}
+
+function mostrarErro(mensagem) {
+    const errorDiv = document.getElementById('errorMessage');
+    errorDiv.textContent = mensagem;
+    errorDiv.style.display = 'block';
+}
+
+async function logout() {
+    try {
+        await fetch('/api/logout', {
+            method: 'POST',
+            credentials: 'include'
+        });
+    } catch (error) {
+        console.error('Erro no logout:', error);
+    }
+    
+    authToken = null;
+    mostrarLogin();
+}
+
+async function carregarDados() {
+    try {
+        console.log('🔄 Carregando dados...');
+        
+        // Carregar estatísticas
+        const statsResponse = await fetch('/api/estatisticas', {
+            credentials: 'include'
+        });
+        
+        if (statsResponse.ok) {
+            const stats = await statsResponse.json();
+            console.log('📊 Estatísticas recebidas:', stats);
+            atualizarEstatisticas(stats);
+        }
+        
+        // Carregar inscrições
+        const inscricoesResponse = await fetch('/api/inscricoes', {
+            credentials: 'include'
+        });
+        
+        if (inscricoesResponse.ok) {
+            const inscricoes = await inscricoesResponse.json();
+            console.log('📋 Inscrições recebidas:', inscricoes);
+            
+            if (inscricoes.sucesso && inscricoes.dados) {
+                window.todasInscricoes = inscricoes.dados;
+                mostrarInscricoes(inscricoes.dados);
                 
-                if (response.ok) {
-                    mostrarDashboard();
-                } else {
-                    logout();
-                }
-            } catch (error) {
-                logout();
+                // Atualizar total nas estatísticas se não veio da API de stats
+                document.getElementById('totalInscricoes').textContent = inscricoes.paginacao.total;
             }
         }
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar dados:', error);
+        document.getElementById('inscricoesList').innerHTML = 
+            '<div class="loading">Erro ao carregar dados. Verifique a conexão.</div>';
+    }
+}
 
-        function mostrarDashboard() {
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('dashboard').style.display = 'block';
-            carregarDados();
-        }
+function atualizarEstatisticas(stats) {
+    console.log('📊 Atualizando estatísticas:', stats);
+    
+    // Se stats tem a propriedade sucesso, extrair os dados
+    const dados = stats.sucesso ? stats.dados : stats;
+    
+    if (dados.total !== undefined) {
+        document.getElementById('totalInscricoes').textContent = dados.total;
+    }
+    
+    // Calcular estatísticas baseadas nos dados das inscrições
+    if (window.todasInscricoes) {
+        const inscricoes = window.todasInscricoes;
+        
+        // Contar participações
+        const presencial = inscricoes.filter(i => i.tipo_participacao === 'presencial').length;
+        const remoto = inscricoes.filter(i => i.tipo_participacao === 'remoto').length;
+        
+        // Contar servidores públicos
+        const servidores = inscricoes.filter(i => 
+            i.servidor_publico && i.servidor_publico !== 'nao' && i.servidor_publico !== null
+        ).length;
+        
+        document.getElementById('totalPresencial').textContent = presencial;
+        document.getElementById('totalRemoto').textContent = remoto;
+        document.getElementById('totalServidores').textContent = servidores;
+    }
+}
 
-        function mostrarErro(mensagem) {
-            const errorDiv = document.getElementById('errorMessage');
-            errorDiv.textContent = mensagem;
-            errorDiv.style.display = 'block';
-        }
-
-        function logout() {
-            localStorage.removeItem('authToken');
-            authToken = null;
-            document.getElementById('loginScreen').style.display = 'flex';
-            document.getElementById('dashboard').style.display = 'none';
-        }
-
-        async function carregarDados() {
-            try {
-                // Carregar estatísticas
-                const statsResponse = await fetch('/api/estatisticas', {
-                    headers: { 'Authorization': `Bearer ${authToken}` }
-                });
-                const stats = await statsResponse.json();
-                
-                if (stats.success) {
-                    atualizarEstatisticas(stats.estatisticas);
-                }
-                
-                // Carregar inscrições
-                const inscricoesResponse = await fetch('/api/inscricoes', {
-                    headers: { 'Authorization': `Bearer ${authToken}` }
-                });
-                const inscricoes = await inscricoesResponse.json();
-                
-                if (inscricoes.success) {
-                    window.todasInscricoes = inscricoes.inscricoes;
-                    mostrarInscricoes(inscricoes.inscricoes);
-                }
-                
-            } catch (error) {
-                console.error('Erro ao carregar dados:', error);
-            }
-        }
-
-        function atualizarEstatisticas(stats) {
-            document.getElementById('totalInscricoes').textContent = stats.total || 0;
-            
-            // Calcular estatísticas de participação
-            let presencial = 0, remoto = 0, servidores = 0;
-            
-            if (stats.participacao) {
-                stats.participacao.forEach(p => {
-                    if (p.participacao === 'presencial') presencial = p.count;
-                    if (p.participacao === 'remoto') remoto = p.count;
-                });
-            }
-            
-            if (stats.servidores) {
-                stats.servidores.forEach(s => {
-                    if (s.servidor !== 'nao') servidores += s.count;
-                });
-            }
-            
-            document.getElementById('totalPresencial').textContent = presencial;
-            document.getElementById('totalRemoto').textContent = remoto;
-            document.getElementById('totalServidores').textContent = servidores;
-        }
-
-        function mostrarInscricoes(inscricoes) {
-            const lista = document.getElementById('inscricoesList');
-            
-            if (inscricoes.length === 0) {
-                lista.innerHTML = '<div class="loading">Nenhuma inscrição encontrada.</div>';
-                return;
-            }
-            
-            const html = inscricoes.map(ins => `
-                <div class="inscricao-item">
-                    <div class="inscricao-header">
-                        <div class="inscricao-nome">${ins.nome_completo}</div>
-                        <div class="inscricao-status status-concluida">${ins.status}</div>
-                    </div>
-                    <div class="inscricao-details">
-                        📧 ${ins.email}<br>
-                        📱 ${ins.celular || 'Não informado'}<br>
-                        🏢 ${ins.empresa || 'Não informado'}<br>
-                        🎯 ${ins.participacao || 'Não informado'}<br>
-                        📅 ${ins.data_inscricao}
-                    </div>
+function mostrarInscricoes(inscricoes) {
+    const lista = document.getElementById('inscricoesList');
+    
+    console.log(`📋 Mostrando ${inscricoes.length} inscrições`);
+    
+    if (inscricoes.length === 0) {
+        lista.innerHTML = '<div class="loading">Nenhuma inscrição encontrada.</div>';
+        return;
+    }
+    
+    const html = inscricoes.map(ins => {
+        // Formatar data
+        const dataFormatada = ins.criado_em ? 
+            new Date(ins.criado_em).toLocaleDateString('pt-BR') : 
+            'Data não informada';
+        
+        // Determinar áreas de interesse
+        const areas = Array.isArray(ins.areas_interesse) ? 
+            ins.areas_interesse.join(', ') : 
+            (ins.areas_interesse || 'Não informado');
+        
+        return `
+            <div class="inscricao-item">
+                <div class="inscricao-header">
+                    <div class="inscricao-nome">${ins.nome_completo || 'Nome não informado'}</div>
+                    <div class="inscricao-status status-concluida">Inscrito</div>
                 </div>
-            `).join('');
-            
-            lista.innerHTML = html;
-        }
+                <div class="inscricao-details">
+                    📧 <strong>Email:</strong> ${ins.email || 'Não informado'}<br>
+                    📱 <strong>Celular:</strong> ${ins.celular || 'Não informado'}<br>
+                    🏢 <strong>Empresa:</strong> ${ins.empresa || 'Não informado'}<br>
+                    👔 <strong>Cargo:</strong> ${ins.cargo || 'Não informado'}<br>
+                    🎯 <strong>Participação:</strong> ${ins.tipo_participacao || 'Não informado'}<br>
+                    🏛️ <strong>Servidor:</strong> ${ins.servidor_publico || 'Não informado'}<br>
+                    📍 <strong>Estado:</strong> ${ins.estado || 'Não informado'}<br>
+                    🎓 <strong>Áreas de Interesse:</strong> ${areas}<br>
+                    📅 <strong>Data da Inscrição:</strong> ${dataFormatada}
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    lista.innerHTML = html;
+}
 
-        function filtrarInscricoes() {
-            const termo = document.getElementById('searchInput').value.toLowerCase();
-            
-            if (!window.todasInscricoes) return;
-            
-            const filtradas = window.todasInscricoes.filter(ins => 
-                ins.nome_completo.toLowerCase().includes(termo) ||
-                ins.email.toLowerCase().includes(termo) ||
-                (ins.empresa && ins.empresa.toLowerCase().includes(termo))
-            );
-            
-            mostrarInscricoes(filtradas);
-        }
+function filtrarInscricoes() {
+    const termo = document.getElementById('searchInput').value.toLowerCase();
+    
+    if (!window.todasInscricoes) return;
+    
+    console.log(`🔍 Filtrando por: "${termo}"`);
+    
+    const filtradas = window.todasInscricoes.filter(ins => 
+        (ins.nome_completo && ins.nome_completo.toLowerCase().includes(termo)) ||
+        (ins.email && ins.email.toLowerCase().includes(termo)) ||
+        (ins.empresa && ins.empresa.toLowerCase().includes(termo)) ||
+        (ins.cargo && ins.cargo.toLowerCase().includes(termo))
+    );
+    
+    console.log(`🔍 Encontradas ${filtradas.length} inscrições`);
+    mostrarInscricoes(filtradas);
+}
 
-        async function exportarCSV() {
-            try {
-                const response = await fetch('/api/export/csv', {
-                    headers: { 'Authorization': `Bearer ${authToken}` }
-                });
-                
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'inscricoes-semana-inovacao-2025.csv';
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                }
-            } catch (error) {
-                alert('Erro ao exportar CSV');
-            }
+async function exportarCSV() {
+    try {
+        console.log('📥 Exportando CSV...');
+        
+        const response = await fetch('/api/exportar?formato=csv', {
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `inscricoes-semana-inovacao-${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            console.log('✅ CSV exportado com sucesso');
+        } else {
+            throw new Error('Erro na resposta do servidor');
         }
+    } catch (error) {
+        console.error('❌ Erro ao exportar CSV:', error);
+        alert('Erro ao exportar CSV. Verifique o console para mais detalhes.');
+    }
+}
 
-        function atualizarDados() {
-            carregarDados();
-        }
+function atualizarDados() {
+    console.log('🔄 Atualizando dados...');
+    carregarDados();
+}
 
-        function verEstatisticas() {
-            alert('Estatísticas detalhadas em desenvolvimento!');
-        }
+function verEstatisticas() {
+    if (window.todasInscricoes) {
+        const total = window.todasInscricoes.length;
+        const porEstado = {};
+        const porCargo = {};
+        
+        window.todasInscricoes.forEach(ins => {
+            // Por estado
+            const estado = ins.estado || 'Não informado';
+            porEstado[estado] = (porEstado[estado] || 0) + 1;
+            
+            // Por cargo  
+            const cargo = ins.cargo || 'Não informado';
+            porCargo[cargo] = (porCargo[cargo] || 0) + 1;
+        });
+        
+        let estatisticas = `📊 ESTATÍSTICAS DETALHADAS\n\n`;
+        estatisticas += `Total de Inscrições: ${total}\n\n`;
+        
+        estatisticas += `📍 POR ESTADO:\n`;
+        Object.entries(porEstado)
+            .sort((a, b) => b[1] - a[1])
+            .forEach(([estado, count]) => {
+                estatisticas += `${estado}: ${count}\n`;
+            });
+        
+        estatisticas += `\n👔 POR CARGO:\n`;
+        Object.entries(porCargo)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10) // Top 10
+            .forEach(([cargo, count]) => {
+                estatisticas += `${cargo}: ${count}\n`;
+            });
+        
+        alert(estatisticas);
+    } else {
+        alert('Carregue os dados primeiro!');
+    }
+}
     </script>
 </body>
 </html>
