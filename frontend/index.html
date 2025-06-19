@@ -14,7 +14,7 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background-image: url(../frontend/images/bg.png);
+            background-image: url(images/bg.png);
             background-position: center;
             background-repeat: no-repeat;
             background-size: cover;
@@ -798,7 +798,6 @@
             <div class="question" data-question="7">
                 <!-- IMAGEM SUGERIDA: Use o logo da Semana de Inovação da página 7 -->
                 <div class="section-image">
-                    <img src="logo-semana-inovacao.jpg" alt="Brasil" class="custom-image">
                     <div class="image-placeholder"></div>
                 </div>
                 <h2>De onde você é?</h2>
@@ -1275,427 +1274,543 @@
 
     <script>
         let currentQuestion = 0;
-const totalQuestions = 24;
-const formData = {};
+        const totalQuestions = 24;
+        const formData = {};
 
-function startForm() {
-    document.getElementById('welcomeScreen').classList.remove('active');
-    
-    setTimeout(() => {
-        document.getElementById('progress').style.display = 'block';
-        document.getElementById('counter').style.display = 'block';
-        document.querySelector('.navigation').style.display = 'flex';
-        currentQuestion = 1;
-        showQuestion(currentQuestion);
-    }, 300);
-}
-
-function updateProgress() {
-    const progress = (currentQuestion / totalQuestions) * 100;
-    document.getElementById('progress').style.width = progress + '%';
-    document.getElementById('counter').textContent = currentQuestion + ' / ' + totalQuestions;
-}
-
-function showQuestion(questionNumber) {
-    // Remove active de todas as perguntas
-    document.querySelectorAll('.question').forEach(q => {
-        q.classList.remove('active');
-    });
-    
-    // Pequeno delay para permitir a animação de saída
-    setTimeout(() => {
-        const currentQ = document.querySelector(`[data-question="${questionNumber}"]`);
-        if (currentQ) {
-            currentQ.classList.add('active');
+        // Função para detectar automaticamente a URL da API
+        function getApiUrl() {
+            if (window.location.hostname.includes('render.com')) {
+                return 'https://super-duper-spork-rfk8.onrender.com';
+            }
+            
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                if (window.location.port === '3000' || window.location.port === '10000') {
+                    return `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
+                }
+                return 'http://localhost:3000';
+            }
+            
+            return window.location.origin;
         }
-    }, 100);
-    
-    document.getElementById('prevBtn').disabled = questionNumber === 1;
-    
-    if (questionNumber === totalQuestions) {
-        document.getElementById('nextBtn').textContent = 'Finalizar';
-    } else {
-        document.getElementById('nextBtn').textContent = 'Próximo';
-    }
-    
-    updateProgress();
-}
 
-function nextQuestion() {
-    if (!validateCurrentQuestion()) {
-        return;
-    }
-    
-    saveCurrentQuestionData();
-    
-    if (currentQuestion < totalQuestions) {
-        currentQuestion++;
-        showQuestion(currentQuestion);
-    } else {
-        finishForm();
-    }
-}
+        // Função de teste da API
+        async function testApiConnection() {
+            try {
+                const apiUrl = getApiUrl();
+                console.log('🔍 Testando conexão com:', `${apiUrl}/api/status`);
+                
+                const response = await fetch(`${apiUrl}/api/status`);
+                
+                if (response.ok) {
+                    const status = await response.json();
+                    console.log('✅ API funcionando:', status);
+                    return true;
+                } else {
+                    console.error('❌ API retornou erro:', response.status);
+                    return false;
+                }
+            } catch (error) {
+                console.error('❌ Erro ao testar API:', error);
+                return false;
+            }
+        }
 
-function previousQuestion() {
-    if (currentQuestion > 1) {
-        currentQuestion--;
-        showQuestion(currentQuestion);
-    }
-}
+        function startForm() {
+            console.log('🚀 Iniciando formulário...');
+            document.getElementById('welcomeScreen').classList.remove('active');
+            
+            setTimeout(() => {
+                document.getElementById('progress').style.display = 'block';
+                document.getElementById('counter').style.display = 'block';
+                document.querySelector('.navigation').style.display = 'flex';
+                currentQuestion = 1;
+                showQuestion(currentQuestion);
+            }, 300);
+        }
 
-function validateCurrentQuestion() {
-    const errorMessages = document.querySelectorAll('.error-message');
-    errorMessages.forEach(msg => msg.style.display = 'none');
+        function updateProgress() {
+            const progress = (currentQuestion / totalQuestions) * 100;
+            document.getElementById('progress').style.width = progress + '%';
+            document.getElementById('counter').textContent = currentQuestion + ' / ' + totalQuestions;
+        }
 
-    switch(currentQuestion) {
-        case 1:
-            const nome = document.getElementById('nomeCompleto').value.trim();
-            if (!nome) {
-                showError('error-nomeCompleto', 'Por favor, digite seu nome completo');
-                return false;
+        function showQuestion(questionNumber) {
+            document.querySelectorAll('.question').forEach(q => {
+                q.classList.remove('active');
+            });
+            
+            setTimeout(() => {
+                const currentQ = document.querySelector(`[data-question="${questionNumber}"]`);
+                if (currentQ) {
+                    currentQ.classList.add('active');
+                }
+            }, 100);
+            
+            document.getElementById('prevBtn').disabled = questionNumber === 1;
+            
+            if (questionNumber === totalQuestions) {
+                document.getElementById('nextBtn').textContent = 'Finalizar';
+            } else {
+                document.getElementById('nextBtn').textContent = 'Próximo';
             }
-            break;
-        case 2:
-            const cpf = document.getElementById('cpf').value.trim();
-            if (!cpf || !isValidCPF(cpf)) {
-                showError('error-cpf', 'Por favor, digite um CPF válido');
-                return false;
-            }
-            break;
-        case 3:
-            const email = document.getElementById('email').value.trim();
-            const confirmEmail = document.getElementById('confirmEmail').value.trim();
-            if (!email || !isValidEmail(email) || email !== confirmEmail) {
-                showError('error-email', 'Por favor, digite emails válidos e iguais');
-                return false;
-            }
-            break;
-        case 4:
-            const senha = document.getElementById('senha').value;
-            const confirmSenha = document.getElementById('confirmSenha').value;
-            if (!senha || senha.length < 6 || senha !== confirmSenha) {
-                showError('error-senha', 'As senhas devem ser iguais e ter pelo menos 6 caracteres');
-                return false;
-            }
-            break;
-        case 15:
-            if (!document.querySelector('input[name="deficiencia"]:checked')) {
-                alert('Por favor, responda sobre acessibilidade');
-                return false;
-            }
-            break;
-        case 16:
-            if (!document.querySelector('input[name="raca"]:checked')) {
-                alert('Por favor, faça sua declaração de diversidade');
-                return false;
-            }
-            break;
-        case 21:
-            if (!document.getElementById('termos-participacao').checked) {
-                alert('Por favor, aceite os termos de participação');
-                return false;
-            }
-            break;
-        case 22:
-            if (!document.getElementById('processamento-dados').checked) {
-                alert('Por favor, autorize o processamento de dados');
-                return false;
-            }
-            break;
-        case 23:
-            if (!document.getElementById('uso-imagem').checked) {
-                alert('Por favor, autorize o uso de imagem');
-                return false;
-            }
-            break;
-        case 24:
-            if (!document.getElementById('alteracoes-evento').checked) {
-                alert('Por favor, confirme que está ciente das possíveis alterações');
-                return false;
-            }
-            break;
-    }
-    return true;
-}
+            
+            updateProgress();
+        }
 
-function showError(elementId, message) {
-    const errorElement = document.getElementById(elementId);
-    if (errorElement) {
-        errorElement.textContent = message;
-        errorElement.style.display = 'block';
-    }
-}
+        function nextQuestion() {
+            if (!validateCurrentQuestion()) {
+                return;
+            }
+            
+            saveCurrentQuestionData();
+            
+            if (currentQuestion < totalQuestions) {
+                currentQuestion++;
+                showQuestion(currentQuestion);
+            } else {
+                finishForm();
+            }
+        }
 
-function saveCurrentQuestionData() {
-    switch(currentQuestion) {
-        case 1:
-            formData.nomeCompleto = document.getElementById('nomeCompleto').value.trim();
-            break;
-        case 2:
-            formData.cpf = document.getElementById('cpf').value.trim();
-            break;
-        case 3:
-            formData.email = document.getElementById('email').value.trim();
-            break;
-        case 4:
-            formData.senha = document.getElementById('senha').value;
-            break;
-        case 5:
-            formData.nomeSocial = document.getElementById('nomeSocial').value.trim();
-            break;
-        case 6:
-            formData.celular = document.getElementById('celular').value.trim();
-            formData.dataNascimento = document.getElementById('dataNascimento').value;
-            break;
-        case 7:
-            formData.pais = document.getElementById('pais').value;
-            formData.estado = document.getElementById('estado').value;
-            break;
-        case 8:
-            formData.vinculoInstitucional = document.getElementById('vinculoInstitucional').value;
-            break;
-        case 9:
-            formData.empresa = document.getElementById('empresa').value.trim();
-            break;
-        case 10:
-            formData.cargo = document.getElementById('cargo').value;
-            formData.outroCargo = document.getElementById('outroCargo').value.trim();
-            break;
-        case 11:
-            formData.lideranca = document.querySelector('input[name="lideranca"]:checked')?.value;
-            break;
-        case 12:
-            formData.servidor = document.querySelector('input[name="servidor"]:checked')?.value;
-            break;
-        case 13:
-            formData.participacao = document.querySelector('input[name="participacao"]:checked')?.value;
-            break;
-        case 14:
-            formData.areasInteresse = Array.from(document.querySelectorAll('input[name="interesse"]:checked')).map(cb => cb.value);
-            break;
-        case 15:
-            formData.deficiencia = document.querySelector('input[name="deficiencia"]:checked')?.value;
-            formData.tiposDeficiencia = Array.from(document.querySelectorAll('input[name="tipoDeficiencia"]:checked')).map(cb => cb.value);
-            break;
-        case 16:
-            formData.raca = document.querySelector('input[name="raca"]:checked')?.value;
-            break;
-        case 17:
-            formData.genero = document.querySelector('input[name="genero"]:checked')?.value;
-            break;
-        case 18:
-            formData.inovagov = document.querySelector('input[name="inovagov"]:checked')?.value;
-            break;
-        case 19:
-            formData.comunicacoes = document.querySelector('input[name="comunicacoes"]:checked')?.value;
-            break;
-        case 20:
-            formData.laboratorio = document.querySelector('input[name="laboratorio"]:checked')?.value;
-            formData.nomeLaboratorio = document.getElementById('nomeLaboratorio').value.trim();
-            break;
-        case 21:
-            formData.termosParticipacao = document.getElementById('termos-participacao').checked;
-            break;
-        case 22:
-            formData.compartilhamentoDados = document.getElementById('compartilhamento-dados').checked;
-            formData.processamentoDados = document.getElementById('processamento-dados').checked;
-            break;
-        case 23:
-            formData.usoImagem = document.getElementById('uso-imagem').checked;
-            break;
-        case 24:
-            formData.alteracoesEvento = document.getElementById('alteracoes-evento').checked;
-            break;
-    }
-}
+        function previousQuestion() {
+            if (currentQuestion > 1) {
+                currentQuestion--;
+                showQuestion(currentQuestion);
+            }
+        }
 
-// NOVA FUNÇÃO: Enviar para API
-async function submitToAPI(data) {
-    try {
-        console.log('📤 Enviando dados para API...');
-        
-        const response = await fetch('http://localhost:3000/api/inscricoes', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
+        function validateCurrentQuestion() {
+            const errorMessages = document.querySelectorAll('.error-message');
+            errorMessages.forEach(msg => msg.style.display = 'none');
+
+            switch(currentQuestion) {
+                case 1:
+                    const nome = document.getElementById('nomeCompleto').value.trim();
+                    if (!nome) {
+                        showError('error-nomeCompleto', 'Por favor, digite seu nome completo');
+                        return false;
+                    }
+                    break;
+                case 2:
+                    const cpf = document.getElementById('cpf').value.trim();
+                    if (!cpf || !isValidCPF(cpf)) {
+                        showError('error-cpf', 'Por favor, digite um CPF válido');
+                        return false;
+                    }
+                    break;
+                case 3:
+                    const email = document.getElementById('email').value.trim();
+                    const confirmEmail = document.getElementById('confirmEmail').value.trim();
+                    if (!email || !isValidEmail(email) || email !== confirmEmail) {
+                        showError('error-email', 'Por favor, digite emails válidos e iguais');
+                        return false;
+                    }
+                    break;
+                case 4:
+                    const senha = document.getElementById('senha').value;
+                    const confirmSenha = document.getElementById('confirmSenha').value;
+                    if (!senha || senha.length < 6 || senha !== confirmSenha) {
+                        showError('error-senha', 'As senhas devem ser iguais e ter pelo menos 6 caracteres');
+                        return false;
+                    }
+                    break;
+                case 15:
+                    if (!document.querySelector('input[name="deficiencia"]:checked')) {
+                        alert('Por favor, responda sobre acessibilidade');
+                        return false;
+                    }
+                    break;
+                case 16:
+                    if (!document.querySelector('input[name="raca"]:checked')) {
+                        alert('Por favor, faça sua declaração de diversidade');
+                        return false;
+                    }
+                    break;
+                case 21:
+                    if (!document.getElementById('termos-participacao').checked) {
+                        alert('Por favor, aceite os termos de participação');
+                        return false;
+                    }
+                    break;
+                case 22:
+                    if (!document.getElementById('processamento-dados').checked) {
+                        alert('Por favor, autorize o processamento de dados');
+                        return false;
+                    }
+                    break;
+                case 23:
+                    if (!document.getElementById('uso-imagem').checked) {
+                        alert('Por favor, autorize o uso de imagem');
+                        return false;
+                    }
+                    break;
+                case 24:
+                    if (!document.getElementById('alteracoes-evento').checked) {
+                        alert('Por favor, confirme que está ciente das possíveis alterações');
+                        return false;
+                    }
+                    break;
+            }
+            return true;
+        }
+
+        function showError(elementId, message) {
+            const errorElement = document.getElementById(elementId);
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+            }
+        }
+
+        function saveCurrentQuestionData() {
+            switch(currentQuestion) {
+                case 1:
+                    formData.nomeCompleto = document.getElementById('nomeCompleto').value.trim();
+                    break;
+                case 2:
+                    formData.cpf = document.getElementById('cpf').value.trim();
+                    break;
+                case 3:
+                    formData.email = document.getElementById('email').value.trim();
+                    break;
+                case 4:
+                    formData.senha = document.getElementById('senha').value;
+                    break;
+                case 5:
+                    formData.nomeSocial = document.getElementById('nomeSocial').value.trim();
+                    break;
+                case 6:
+                    formData.celular = document.getElementById('celular').value.trim();
+                    formData.dataNascimento = document.getElementById('dataNascimento').value;
+                    break;
+                case 7:
+                    formData.pais = document.getElementById('pais').value;
+                    formData.estado = document.getElementById('estado').value;
+                    break;
+                case 8:
+                    formData.vinculoInstitucional = document.getElementById('vinculoInstitucional').value;
+                    break;
+                case 9:
+                    formData.empresa = document.getElementById('empresa').value.trim();
+                    break;
+                case 10:
+                    formData.cargo = document.getElementById('cargo').value;
+                    formData.outroCargo = document.getElementById('outroCargo').value.trim();
+                    break;
+                case 11:
+                    formData.lideranca = document.querySelector('input[name="lideranca"]:checked')?.value;
+                    break;
+                case 12:
+                    formData.servidor = document.querySelector('input[name="servidor"]:checked')?.value;
+                    break;
+                case 13:
+                    formData.participacao = document.querySelector('input[name="participacao"]:checked')?.value;
+                    break;
+                case 14:
+                    formData.areasInteresse = Array.from(document.querySelectorAll('input[name="interesse"]:checked')).map(cb => cb.value);
+                    break;
+                case 15:
+                    formData.deficiencia = document.querySelector('input[name="deficiencia"]:checked')?.value;
+                    formData.tiposDeficiencia = Array.from(document.querySelectorAll('input[name="tipoDeficiencia"]:checked')).map(cb => cb.value);
+                    break;
+                case 16:
+                    formData.raca = document.querySelector('input[name="raca"]:checked')?.value;
+                    break;
+                case 17:
+                    formData.genero = document.querySelector('input[name="genero"]:checked')?.value;
+                    break;
+                case 18:
+                    formData.inovagov = document.querySelector('input[name="inovagov"]:checked')?.value;
+                    break;
+                case 19:
+                    formData.comunicacoes = document.querySelector('input[name="comunicacoes"]:checked')?.value;
+                    break;
+                case 20:
+                    formData.laboratorio = document.querySelector('input[name="laboratorio"]:checked')?.value;
+                    formData.nomeLaboratorio = document.getElementById('nomeLaboratorio').value.trim();
+                    break;
+                case 21:
+                    formData.termosParticipacao = document.getElementById('termos-participacao').checked;
+                    break;
+                case 22:
+                    formData.compartilhamentoDados = document.getElementById('compartilhamento-dados').checked;
+                    formData.processamentoDados = document.getElementById('processamento-dados').checked;
+                    break;
+                case 23:
+                    formData.usoImagem = document.getElementById('uso-imagem').checked;
+                    break;
+                case 24:
+                    formData.alteracoesEvento = document.getElementById('alteracoes-evento').checked;
+                    break;
+            }
+        }
+
+        // Enviar para API com URL dinâmica
+        async function submitToAPI(data) {
+            try {
+                const apiUrl = getApiUrl();
+                console.log('📤 Enviando dados para API:', apiUrl);
+                
+                const response = await fetch(`${apiUrl}/api/inscricoes`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                console.log('📡 Status da resposta:', response.status);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('❌ Erro HTTP:', response.status, errorText);
+                    throw new Error(`Erro HTTP: ${response.status} - ${errorText}`);
+                }
+                
+                const result = await response.json();
+                console.log('✅ Sucesso na API:', result);
+                
+                return result;
+                
+            } catch (error) {
+                console.error('❌ Erro ao enviar para API:', error);
+                
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    console.error('🌐 Possível erro de CORS ou conexão');
+                    alert('Erro de conexão com o servidor. Verifique se o backend está rodando.');
+                }
+                
+                console.log('💾 Salvando no localStorage como backup...');
+                saveToLocalStorage(data);
+                
+                throw error;
+            }
+        }
+
+        // Backup no localStorage
+        function saveToLocalStorage(data) {
+            try {
+                let submissions = JSON.parse(localStorage.getItem('semanaInovacao2025') || '[]');
+                data.id = 'LOCAL_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                data.dataInscricao = new Date().toLocaleString('pt-BR');
+                data.status = 'Local (Backup)';
+                submissions.push(data);
+                localStorage.setItem('semanaInovacao2025', JSON.stringify(submissions));
+                console.log('💾 Salvo no localStorage como backup');
+            } catch (error) {
+                console.error('❌ Erro ao salvar no localStorage:', error);
+            }
+        }
+
+        // Finalizar formulário
+        async function finishForm() {
+            formData.id = 'INS_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            formData.dataInscricao = new Date().toLocaleString('pt-BR');
+            formData.status = 'Concluída';
+            
+            console.log('📋 Dados coletados:', formData);
+            
+            const apiWorking = await testApiConnection();
+            
+            if (!apiWorking) {
+                console.log('⚠️ API não está respondendo, salvando localmente');
+                saveToLocalStorage(formData);
+                showSuccessMessage('LOCAL');
+                showFinalScreen();
+                return;
+            }
+            
+            try {
+                const result = await submitToAPI(formData);
+                console.log('🎉 Inscrição enviada com sucesso!', result);
+                showSuccessMessage('API');
+                
+            } catch (error) {
+                console.log('⚠️ Falha na API, mas dados salvos localmente');
+                showSuccessMessage('LOCAL');
+            }
+            
+            showFinalScreen();
+        }
+
+        function showFinalScreen() {
+            document.querySelectorAll('.question').forEach(q => {
+                q.classList.remove('active');
+            });
+            
+            setTimeout(() => {
+                document.getElementById('finalScreen').classList.add('active');
+                document.querySelector('.navigation').style.display = 'none';
+                document.getElementById('counter').style.display = 'none';
+                document.getElementById('progress').style.width = '100%';
+            }, 300);
+        }
+
+        function showSuccessMessage(type) {
+            const finalScreen = document.getElementById('finalScreen');
+            const successMsg = finalScreen.querySelector('p');
+            
+            if (type === 'API') {
+                successMsg.innerHTML = `
+                    Parabéns! Sua inscrição na Semana de Inovação 2025 foi realizada com sucesso.<br><br>
+                    ✅ <strong>Dados enviados para o servidor!</strong><br><br>
+                    Em breve você receberá um e-mail de confirmação com todas as informações sobre o evento.<br><br>
+                    Obrigado por fazer parte desta jornada de inovação! 🚀
+                `;
+            } else {
+                successMsg.innerHTML = `
+                    Sua inscrição foi registrada!<br><br>
+                    ⚠️ <strong>Dados salvos localmente (servidor temporariamente indisponível)</strong><br><br>
+                    Suas informações estão seguras e serão processadas em breve.<br><br>
+                    Obrigado por fazer parte desta jornada de inovação! 🚀
+                `;
+            }
+        }
+
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        function isValidCPF(cpf) {
+            cpf = cpf.replace(/[^\d]/g, '');
+            return cpf.length === 11 && cpf !== '00000000000';
+        }
+
+        function formatCPF(input) {
+            let value = input.value.replace(/[^\d]/g, '');
+            value = value.replace(/(\d{3})(\d)/, '$1.$2');
+            value = value.replace(/(\d{3})(\d)/, '$1.$2');
+            value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+            input.value = value;
+        }
+
+        function toggleEstados() {
+            const paisSelect = document.getElementById('pais');
+            const estadoSelect = document.getElementById('estado');
+            
+            if (paisSelect.value === 'BR') {
+                estadoSelect.style.display = 'block';
+            } else {
+                estadoSelect.style.display = 'none';
+                estadoSelect.value = '';
+            }
+        }
+
+        function toggleOutroCargo() {
+            const cargoSelect = document.getElementById('cargo');
+            const outroCargoInput = document.getElementById('outroCargo');
+            
+            if (cargoSelect.value === 'outro') {
+                outroCargoInput.style.display = 'block';
+            } else {
+                outroCargoInput.style.display = 'none';
+                outroCargoInput.value = '';
+            }
+        }
+
+        function toggleDeficiencia() {
+            const deficienciaSim = document.getElementById('deficiencia-sim').checked;
+            const tiposDeficiencia = document.getElementById('tiposDeficiencia');
+            
+            if (deficienciaSim) {
+                tiposDeficiencia.classList.add('show');
+            } else {
+                tiposDeficiencia.classList.remove('show');
+            }
+        }
+
+        function toggleLaboratorio() {
+            const laboratorioSim = document.getElementById('laboratorio-sim').checked;
+            const qualLaboratorio = document.getElementById('qualLaboratorio');
+            
+            if (laboratorioSim) {
+                qualLaboratorio.classList.add('show');
+            } else {
+                qualLaboratorio.classList.remove('show');
+                document.getElementById('nomeLaboratorio').value = '';
+            }
+        }
+
+        // Debug
+        function showDebugInfo() {
+            console.log('🔧 DEBUG INFO:');
+            console.log('Current URL:', window.location.href);
+            console.log('API URL:', getApiUrl());
+            console.log('Hostname:', window.location.hostname);
+            console.log('Port:', window.location.port);
+            console.log('Protocol:', window.location.protocol);
+        }
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔍 Verificando conexão com API...');
+            
+            // Event listeners para botões
+            const startButton = document.getElementById('startButton');
+            if (startButton) {
+                startButton.addEventListener('click', startForm);
+                console.log('✅ Event listener adicionado ao botão de início');
+            }
+
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            if (prevBtn) prevBtn.addEventListener('click', previousQuestion);
+            if (nextBtn) nextBtn.addEventListener('click', nextQuestion);
+
+            // Event listeners para campos dinâmicos
+            const paisSelect = document.getElementById('pais');
+            if (paisSelect) paisSelect.addEventListener('change', toggleEstados);
+
+            const cargoSelect = document.getElementById('cargo');
+            if (cargoSelect) cargoSelect.addEventListener('change', toggleOutroCargo);
+
+            const deficienciaInputs = document.querySelectorAll('input[name="deficiencia"]');
+            deficienciaInputs.forEach(input => {
+                input.addEventListener('change', toggleDeficiencia);
+            });
+
+            const laboratorioInputs = document.querySelectorAll('input[name="laboratorio"]');
+            laboratorioInputs.forEach(input => {
+                input.addEventListener('change', toggleLaboratorio);
+            });
+
+            // Formatação CPF
+            const cpfInput = document.getElementById('cpf');
+            if (cpfInput) {
+                cpfInput.addEventListener('input', function() {
+                    formatCPF(this);
+                });
+            }
+
+            // Enter para próxima pergunta
+            document.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                    if (currentQuestion > 0) {
+                        nextQuestion();
+                    }
+                }
+            });
+
+            // Debug em localhost
+            if (window.location.hostname === 'localhost') {
+                showDebugInfo();
+            }
+            
+            // Testar conexão
+            setTimeout(async () => {
+                const isWorking = await testApiConnection();
+                if (isWorking) {
+                    console.log('✅ Conexão com API estabelecida');
+                } else {
+                    console.log('⚠️ API não está respondendo - modo offline disponível');
+                }
+            }, 2000);
+
+            // Inicializar
+            toggleEstados();
         });
-        
-        if (!response.ok) {
-            throw new Error(`Erro HTTP: ${response.status}`);
-        }
-        
-        const result = await response.json();
-        console.log('✅ Sucesso na API:', result);
-        
-        return result;
-        
-    } catch (error) {
-        console.error('❌ Erro ao enviar para API:', error);
-        
-        // Fallback: salvar no localStorage se API falhar
-        console.log('💾 Salvando no localStorage como backup...');
-        saveToLocalStorage(data);
-        
-        throw error;
-    }
-}
-
-// NOVA FUNÇÃO: Backup no localStorage
-function saveToLocalStorage(data) {
-    try {
-        let submissions = JSON.parse(localStorage.getItem('semanaInovacao2025') || '[]');
-        data.id = 'LOCAL_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        data.dataInscricao = new Date().toLocaleString('pt-BR');
-        data.status = 'Local (Backup)';
-        submissions.push(data);
-        localStorage.setItem('semanaInovacao2025', JSON.stringify(submissions));
-        console.log('💾 Salvo no localStorage como backup');
-    } catch (error) {
-        console.error('❌ Erro ao salvar no localStorage:', error);
-    }
-}
-
-// FUNÇÃO MODIFICADA: finishForm
-async function finishForm() {
-    // Adicionar metadados
-    formData.id = 'INS_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    formData.dataInscricao = new Date().toLocaleString('pt-BR');
-    formData.status = 'Concluída';
-    
-    console.log('📋 Dados coletados:', formData);
-    
-    // Tentar enviar para a API
-    try {
-        const result = await submitToAPI(formData);
-        console.log('🎉 Inscrição enviada com sucesso!', result);
-        
-        // Mostrar mensagem de sucesso
-        showSuccessMessage('API');
-        
-    } catch (error) {
-        console.log('⚠️ Falha na API, mas dados salvos localmente');
-        
-        // Mostrar mensagem de backup
-        showSuccessMessage('LOCAL');
-    }
-    
-    // Remove active de todas as perguntas
-    document.querySelectorAll('.question').forEach(q => {
-        q.classList.remove('active');
-    });
-    
-    // Delay para mostrar tela final
-    setTimeout(() => {
-        document.getElementById('finalScreen').classList.add('active');
-        document.querySelector('.navigation').style.display = 'none';
-        document.getElementById('counter').style.display = 'none';
-        document.getElementById('progress').style.width = '100%';
-    }, 300);
-}
-
-// NOVA FUNÇÃO: Mostrar mensagem de sucesso
-function showSuccessMessage(type) {
-    const finalScreen = document.getElementById('finalScreen');
-    const successMsg = finalScreen.querySelector('p');
-    
-    if (type === 'API') {
-        successMsg.innerHTML = `
-            Parabéns! Sua inscrição na Semana de Inovação 2025 foi realizada com sucesso.<br><br>
-            ✅ <strong>Dados enviados para o servidor!</strong><br><br>
-            Em breve você receberá um e-mail de confirmação com todas as informações sobre o evento.<br><br>
-            Obrigado por fazer parte desta jornada de inovação! 🚀
-        `;
-    } else {
-        successMsg.innerHTML = `
-            Sua inscrição foi registrada!<br><br>
-            ⚠️ <strong>Dados salvos localmente (servidor temporariamente indisponível)</strong><br><br>
-            Suas informações estão seguras e serão processadas em breve.<br><br>
-            Obrigado por fazer parte desta jornada de inovação! 🚀
-        `;
-    }
-}
-
-function isValidEmail(email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-}
-
-function isValidCPF(cpf) {
-    cpf = cpf.replace(/[^\d]/g, '');
-    return cpf.length === 11 && cpf !== '00000000000';
-}
-
-function formatCPF(input) {
-    let value = input.value.replace(/[^\d]/g, '');
-    value = value.replace(/(\d{3})(\d)/, '$1.$2');
-    value = value.replace(/(\d{3})(\d)/, '$1.$2');
-    value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-    input.value = value;
-}
-
-function toggleEstados() {
-    const paisSelect = document.getElementById('pais');
-    const estadoSelect = document.getElementById('estado');
-    
-    if (paisSelect.value === 'BR') {
-        estadoSelect.style.display = 'block';
-    } else {
-        estadoSelect.style.display = 'none';
-        estadoSelect.value = '';
-    }
-}
-
-function toggleOutroCargo() {
-    const cargoSelect = document.getElementById('cargo');
-    const outroCargoInput = document.getElementById('outroCargo');
-    
-    if (cargoSelect.value === 'outro') {
-        outroCargoInput.style.display = 'block';
-    } else {
-        outroCargoInput.style.display = 'none';
-        outroCargoInput.value = '';
-    }
-}
-
-function toggleDeficiencia() {
-    const deficienciaSim = document.getElementById('deficiencia-sim').checked;
-    const tiposDeficiencia = document.getElementById('tiposDeficiencia');
-    
-    if (deficienciaSim) {
-        tiposDeficiencia.classList.add('show');
-    } else {
-        tiposDeficiencia.classList.remove('show');
-    }
-}
-
-function toggleLaboratorio() {
-    const laboratorioSim = document.getElementById('laboratorio-sim').checked;
-    const qualLaboratorio = document.getElementById('qualLaboratorio');
-    
-    if (laboratorioSim) {
-        qualLaboratorio.classList.add('show');
-    } else {
-        qualLaboratorio.classList.remove('show');
-        document.getElementById('nomeLaboratorio').value = '';
-    }
-}
-
-// Event listeners
-document.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
-        nextQuestion();
-    }
-});
-
-// Formatação automática do CPF
-document.getElementById('cpf').addEventListener('input', function() {
-    formatCPF(this);
-});
-
-// Inicializar
-toggleEstados();
-    </script>
+        </script>
 </body>
 </html>

@@ -12,7 +12,7 @@ const Database = require('./database');
 const Auth = require('./auth');
 
 const app = express();
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || 3000; // CORREÇÃO: Mudou de 10000 para 3000
 
 // ==============================================
 // DIAGNÓSTICO DE PASTAS (para debug)
@@ -50,24 +50,54 @@ app.use(helmet({
             defaultSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
-            scriptSrc: ["'self'", "'unsafe-inline'"],
-            imgSrc: ["'self'", "data:", "https:"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+            scriptSrcAttr: ["'unsafe-inline'"], // CORREÇÃO: Permitir eventos inline
+            imgSrc: ["'self'", "data:", "https:", "blob:"],
+            connectSrc: ["'self'"],
         },
     },
 }));
 
+// CORREÇÃO: CORS mais permissivo para desenvolvimento
 app.use(cors({
-    origin: process.env.NODE_ENV === 'production' 
-        ? ['https://super-duper-spork-rfk8.onrender.com'] 
-        : ['http://localhost:3000', 'http://localhost:10000'],
-    credentials: true
+    origin: function (origin, callback) {
+        // Durante desenvolvimento, permitir qualquer origem
+        if (process.env.NODE_ENV !== 'production') {
+            return callback(null, true);
+        }
+        
+        // Em produção, usar lista específica
+        const allowedOrigins = [
+            'https://super-duper-spork-rfk8.onrender.com',
+            'http://localhost:3000',
+            'http://localhost:10000'
+        ];
+        
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Não permitido pelo CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Rate limiting
-const limiter = rateLimit({
+// CORREÇÃO: Rate limiting mais específico
+const apiLimiter = rateLimit({
     windowMs: (parseInt(process.env.LOGIN_ATTEMPTS_WINDOW) || 15) * 60 * 1000,
     max: parseInt(process.env.LOGIN_ATTEMPTS_MAX) || 5,
     message: { sucesso: false, mensagem: 'Muitas tentativas de login. Tente novamente em 15 minutos.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => req.path !== '/api/login' // Só aplicar no login
+});
+
+const inscricaoLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minuto
+    max: 3, // 3 inscrições por minuto
+    message: { sucesso: false, mensagem: 'Muitas tentativas de inscrição. Tente novamente em 1 minuto.' },
     standardHeaders: true,
     legacyHeaders: false,
 });
@@ -79,12 +109,11 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
-// Middleware para logs de acesso
+// CORREÇÃO: Middleware para logs de acesso melhorado
 app.use((req, res, next) => {
     const ip = req.ip || req.connection.remoteAddress || 'unknown';
-    if (req.path.startsWith('/api/')) {
-        console.log(`📡 API ${req.method} ${req.path} de ${ip}`);
-    }
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] ${req.method} ${req.path} de ${ip}`);
     next();
 });
 
@@ -92,17 +121,23 @@ app.use((req, res, next) => {
 // CONFIGURAR SERVIR ARQUIVOS ESTÁTICOS
 // ==============================================
 
-// Verificar se public existe
+// CORREÇÃO: Verificar se public existe e criar estrutura
 const publicPath = path.join(__dirname, 'public');
 console.log('📁 Public path:', publicPath);
 if (fs.existsSync(publicPath)) {
     app.use('/admin', express.static(publicPath));
     console.log('✅ ADMIN: Servindo de', publicPath);
 } else {
-    console.log('❌ ADMIN: Pasta public não encontrada');
+    console.log('❌ ADMIN: Pasta public não encontrada - criando...');
+    try {
+        fs.mkdirSync(publicPath, { recursive: true });
+        console.log('✅ ADMIN: Pasta public criada');
+    } catch (error) {
+        console.error('❌ Erro ao criar pasta public:', error);
+    }
 }
 
-// Servir frontend na raiz
+// CORREÇÃO: Servir frontend na raiz com fallback
 if (frontendPath && fs.existsSync(frontendPath)) {
     app.use('/', express.static(frontendPath));
     console.log('✅ FRONTEND: Servindo de', frontendPath);
@@ -113,17 +148,29 @@ if (frontendPath && fs.existsSync(frontendPath)) {
     } else {
         console.log('❌ INDEX.HTML não encontrado');
     }
-} else {
-    console.log('❌ FRONTEND: Pasta não encontrada');
-}
-
-// Servir imagens do frontend (CORREÇÃO)
-if (frontendPath) {
+    
+    // Servir imagens
     const imagesPath = path.join(frontendPath, 'images');
     if (fs.existsSync(imagesPath)) {
         app.use('/images', express.static(imagesPath));
         console.log('✅ IMAGES: Servindo de', imagesPath);
     }
+} else {
+    console.log('❌ FRONTEND: Pasta não encontrada');
+    
+    // Fallback: servir uma página básica se frontend não existir
+    app.get('/', (req, res) => {
+        res.send(`
+            <html>
+                <head><title>Semana de Inovação 2025</title></head>
+                <body style="font-family: Arial; text-align: center; padding: 50px;">
+                    <h1>🚀 Semana de Inovação 2025</h1>
+                    <p>Sistema temporariamente em manutenção</p>
+                    <p><a href="/api/status">Ver Status da API</a></p>
+                </body>
+            </html>
+        `);
+    });
 }
 
 // ==============================================
@@ -135,10 +182,12 @@ const auth = new Auth();
 // ==============================================
 // ROTAS DE AUTENTICAÇÃO
 // ==============================================
-app.post('/api/login', limiter, async (req, res) => {
+app.post('/api/login', apiLimiter, async (req, res) => {
     try {
         const { email, senha } = req.body;
         const ip = req.ip || req.connection.remoteAddress || 'unknown';
+        
+        console.log(`🔐 Tentativa de login: ${email} de ${ip}`);
         
         if (!email || !senha) {
             return res.status(400).json({
@@ -156,6 +205,9 @@ app.post('/api/login', limiter, async (req, res) => {
                 sameSite: 'strict',
                 maxAge: 2 * 60 * 60 * 1000
             });
+            console.log(`✅ Login bem-sucedido: ${email}`);
+        } else {
+            console.log(`❌ Login falhado: ${email} - ${resultado.mensagem}`);
         }
         
         res.status(resultado.sucesso ? 200 : 401).json(resultado);
@@ -194,22 +246,47 @@ app.get('/api/status', (req, res) => {
         status: 'Sistema Online',
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
-        version: '2.0.0'
+        version: '2.0.1',
+        frontend: frontendPath ? 'Configurado' : 'Não encontrado',
+        database: 'SQLite',
+        port: PORT
     });
 });
 
-// Rota para submeter inscrição (pública)
-app.post('/api/inscricoes', async (req, res) => {
+// CORREÇÃO: Rota para submeter inscrição (pública) com melhor validação
+app.post('/api/inscricoes', inscricaoLimiter, async (req, res) => {
     try {
         const inscricaoData = req.body;
         const ip = req.ip || req.connection.remoteAddress || 'unknown';
         
         console.log(`📝 Nova inscrição de ${ip}:`, {
-            nome: inscricaoData.nome,
-            email: inscricaoData.email
+            nome: inscricaoData.nomeCompleto || 'Não informado',
+            email: inscricaoData.email || 'Não informado'
         });
         
-        const resultado = await db.criarInscricao(inscricaoData);
+        // Validação básica
+        if (!inscricaoData.nomeCompleto || !inscricaoData.email) {
+            return res.status(400).json({
+                sucesso: false,
+                mensagem: 'Nome completo e email são obrigatórios'
+            });
+        }
+        
+        // Mapear dados do frontend para formato do banco
+        const dadosFormatados = {
+            nome: inscricaoData.nomeCompleto,
+            email: inscricaoData.email,
+            telefone: inscricaoData.celular || null,
+            orgao: inscricaoData.empresa || null,
+            cargo: inscricaoData.cargo === 'outro' ? inscricaoData.outroCargo : inscricaoData.cargo,
+            expectativas: inscricaoData.areasInteresse ? inscricaoData.areasInteresse.join(', ') : null,
+            experiencia_ai: inscricaoData.vinculoInstitucional || null,
+            ferramenta_ai: inscricaoData.laboratorio || null,
+            interesse_workshop: inscricaoData.participacao || null,
+            tema_interesse: inscricaoData.genero || null
+        };
+        
+        const resultado = await db.criarInscricao(dadosFormatados);
         
         if (resultado.sucesso) {
             console.log(`✅ Inscrição salva - ID: ${resultado.id}`);
@@ -223,7 +300,8 @@ app.post('/api/inscricoes', async (req, res) => {
         console.error('❌ Erro no endpoint de inscrições:', error);
         res.status(500).json({
             sucesso: false,
-            mensagem: 'Erro interno do servidor'
+            mensagem: 'Erro interno do servidor',
+            erro: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 });
@@ -307,39 +385,61 @@ app.get('/api/exportar', auth.middlewareAuth.bind(auth), async (req, res) => {
 // ROTAS DO FRONTEND
 // ==============================================
 
-// Rota para a raiz (formulário)
+// CORREÇÃO: Rota para a raiz (formulário) com fallback
 app.get('/', (req, res) => {
     if (frontendPath) {
         const indexPath = path.join(frontendPath, 'index.html');
         if (fs.existsSync(indexPath)) {
             res.sendFile(indexPath);
         } else {
-            res.status(404).send('Página não encontrada');
+            res.status(404).send(`
+                <html>
+                    <head><title>Página não encontrada</title></head>
+                    <body style="font-family: Arial; text-align: center; padding: 50px;">
+                        <h1>📄 Página não encontrada</h1>
+                        <p>O arquivo index.html não foi encontrado em: ${indexPath}</p>
+                        <p><a href="/api/status">Ver Status do Sistema</a></p>
+                    </body>
+                </html>
+            `);
         }
     } else {
-        res.status(404).send('Frontend não configurado');
+        res.status(404).send(`
+            <html>
+                <head><title>Frontend não configurado</title></head>
+                <body style="font-family: Arial; text-align: center; padding: 50px;">
+                    <h1>⚙️ Frontend não configurado</h1>
+                    <p>Pasta frontend não encontrada</p>
+                    <p><a href="/api/status">Ver Status do Sistema</a></p>
+                </body>
+            </html>
+        `);
     }
 });
 
 // Rotas específicas para admin
 app.get('/admin', (req, res) => {
     const adminPath = path.join(__dirname, 'public', 'admin.html');
-    console.log('📄 Admin path:', adminPath);
+    console.log('📄 Tentando acessar admin path:', adminPath);
     if (fs.existsSync(adminPath)) {
         res.sendFile(adminPath);
     } else {
-        res.status(404).send('Dashboard não encontrado');
+        res.status(404).send(`
+            <html>
+                <head><title>Dashboard Admin</title></head>
+                <body style="font-family: Arial; text-align: center; padding: 50px;">
+                    <h1>🔧 Dashboard em desenvolvimento</h1>
+                    <p>Arquivo admin.html não encontrado em: ${adminPath}</p>
+                    <p><a href="/api/status">Ver Status do Sistema</a></p>
+                    <p><a href="/">Voltar ao formulário</a></p>
+                </body>
+            </html>
+        `);
     }
 });
 
 app.get('/admin/', (req, res) => {
-    const adminPath = path.join(__dirname, 'public', 'admin.html');
-    console.log('📄 Admin path:', adminPath);
-    if (fs.existsSync(adminPath)) {
-        res.sendFile(adminPath);
-    } else {
-        res.status(404).send('Dashboard não encontrado');
-    }
+    res.redirect('/admin');
 });
 
 // ==============================================
@@ -347,12 +447,17 @@ app.get('/admin/', (req, res) => {
 // ==============================================
 app.use((error, req, res, next) => {
     const ip = req.ip || req.connection.remoteAddress || 'unknown';
-    console.error(`💥 ERRO GLOBAL de ${ip}:`, error.message);
+    const timestamp = new Date().toISOString();
+    
+    console.error(`[${timestamp}] 💥 ERRO GLOBAL de ${ip}:`, error.message);
     console.error(error.stack);
     
-    res.status(500).json({
+    res.status(error.status || 500).json({
         sucesso: false,
-        mensagem: 'Erro interno do servidor'
+        mensagem: process.env.NODE_ENV === 'production' 
+            ? 'Erro interno do servidor' 
+            : error.message,
+        timestamp: timestamp
     });
 });
 
@@ -364,50 +469,9 @@ app.use('*', (req, res) => {
     console.log(`🚫 Rota não encontrada: ${req.originalUrl} de ${ip}`);
     res.status(404).json({
         sucesso: false,
-        mensagem: 'Rota não encontrada'
-    });
-});
-
-const { body, validationResult } = require('express-validator');
-
-// Middleware de validação para inscrições
-const validarInscricao = [
-    body('email').isEmail().normalizeEmail(),
-    body('nome').trim().isLength({ min: 2, max: 100 }),
-    body('telefone').optional().isMobilePhone('pt-BR'),
-    (req, res, next) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({
-                sucesso: false,
-                mensagem: 'Dados inválidos',
-                erros: errors.array()
-            });
-        }
-        next();
-    }
-];
-
-
-// server.js - Middleware de erro mais robusto
-app.use((error, req, res, next) => {
-    const ip = req.ip || 'unknown';
-    const timestamp = new Date().toISOString();
-    
-    // Log estruturado para monitoramento
-    console.error(`[${timestamp}] ERROR ${ip}: ${error.message}`, {
-        stack: error.stack,
-        url: req.url,
-        method: req.method,
-        userAgent: req.get('User-Agent')
-    });
-    
-    // Não vazar informações em produção
-    const isDev = process.env.NODE_ENV !== 'production';
-    res.status(error.status || 500).json({
-        sucesso: false,
-        mensagem: isDev ? error.message : 'Erro interno do servidor',
-        ...(isDev && { stack: error.stack })
+        mensagem: 'Rota não encontrada',
+        rota: req.originalUrl,
+        metodo: req.method
     });
 });
 
@@ -416,6 +480,8 @@ app.use((error, req, res, next) => {
 // ==============================================
 const iniciarServidor = async () => {
     try {
+        console.log('🚀 Iniciando servidor...');
+        
         // Conectar banco de dados
         await db.conectar();
         console.log('📊 Banco de dados conectado!');
@@ -425,22 +491,33 @@ const iniciarServidor = async () => {
         console.log('✅ Tabela de inscrições criada/verificada!');
         
         // Iniciar servidor
-        app.listen(PORT, '0.0.0.0', () => {
+        const server = app.listen(PORT, '0.0.0.0', () => {
             console.log('🔒 ================================');
             console.log('   SEMANA DE INOVAÇÃO 2025');
             console.log('   🛡️  MODO SEGURO ATIVADO');
             console.log('================================');
             console.log(`🚀 Servidor: http://localhost:${PORT}`);
-            console.log('📱 Frontend: ✅ Configurado');
+            console.log(`📱 Frontend: ${frontendPath ? '✅ Configurado' : '❌ Não encontrado'}`);
             console.log(`📋 Dashboard: http://localhost:${PORT}/admin`);
             console.log(`🔐 Login: ${process.env.ADMIN_EMAIL || 'thais@teste.com'} / [senha protegida]`);
-            console.log(`📊 API: http://localhost:${PORT}/api/inscricoes`);
+            console.log(`📊 API Status: http://localhost:${PORT}/api/status`);
+            console.log(`📝 API Inscrições: http://localhost:${PORT}/api/inscricoes`);
             console.log('💾 Banco: SQLite conectado');
             console.log('🛡️  Rate Limiting: ✅ Ativo');
             console.log('🔒 JWT Security: ✅ Ativo');
             console.log('📝 Logs Seguros: ✅ Ativo');
             console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
             console.log('================================');
+        });
+        
+        // Graceful shutdown
+        process.on('SIGTERM', () => {
+            console.log('🔄 Recebido SIGTERM, fechando servidor...');
+            server.close(() => {
+                console.log('✅ Servidor fechado');
+                db.fechar();
+                process.exit(0);
+            });
         });
         
     } catch (error) {
