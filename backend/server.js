@@ -3,7 +3,6 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const path = require('path');
 const Database = require('./database');
@@ -83,7 +82,7 @@ function verificarAuth(req, res, next) {
     }
 }
 
-// Servir arquivos estáticos
+// Servir arquivos estáticos do frontend
 app.use(express.static(path.join(__dirname, '..', 'frontend')));
 
 // ROTAS PÚBLICAS
@@ -174,7 +173,7 @@ app.post('/api/inscricoes', async (req, res) => {
     }
 });
 
-// Login (PÚBLICO)
+// Login APENAS para admin (PÚBLICO)
 app.post('/api/login', async (req, res) => {
     try {
         const { email, senha } = req.body;
@@ -190,23 +189,12 @@ app.post('/api/login', async (req, res) => {
             });
         }
 
-        // Buscar usuário
-        const usuario = await db.buscarUsuarioPorEmail(email);
-        
-        if (!usuario) {
-            console.log(`❌ Email não encontrado: ${email}`);
-            console.log(`❌ Login falhado: ${email} - Credenciais inválidas`);
-            return res.status(401).json({
-                sucesso: false,
-                mensagem: 'Credenciais inválidas'
-            });
-        }
+        // LOGIN HARDCODED - APENAS ADMIN
+        const ADMIN_EMAIL = 'admin@semana-inovacao.com';
+        const ADMIN_SENHA = 'admin123';
 
-        // Verificar senha
-        const senhaValida = await bcrypt.compare(senha, usuario.senha);
-        
-        if (!senhaValida) {
-            console.log(`❌ Senha incorreta para: ${email}`);
+        if (email !== ADMIN_EMAIL || senha !== ADMIN_SENHA) {
+            console.log(`❌ Email não encontrado: ${email}`);
             console.log(`❌ Login falhado: ${email} - Credenciais inválidas`);
             return res.status(401).json({
                 sucesso: false,
@@ -217,9 +205,9 @@ app.post('/api/login', async (req, res) => {
         // Gerar token JWT
         const token = jwt.sign(
             { 
-                id: usuario.id, 
-                email: usuario.email,
-                nome: usuario.nome_completo
+                id: 1, 
+                email: ADMIN_EMAIL,
+                nome: 'Administrador'
             },
             JWT_SECRET,
             { expiresIn: '24h' }
@@ -240,9 +228,9 @@ app.post('/api/login', async (req, res) => {
             sucesso: true,
             mensagem: 'Login realizado com sucesso',
             usuario: {
-                id: usuario.id,
-                email: usuario.email,
-                nome: usuario.nome_completo
+                id: 1,
+                email: ADMIN_EMAIL,
+                nome: 'Administrador'
             }
         });
 
@@ -255,39 +243,10 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// APLICAR PROTEÇÃO DE AUTENTICAÇÃO NAS ROTAS SENSÍVEIS
-// PROTEGER APENAS AS ROTAS ADMIN:
-
-// Login (PÚBLICO)
-app.post('/api/login', async (req, res) => {
-    // código do login...
-});
-
-// Inscrições (PÚBLICO)
-app.post('/api/inscricoes', async (req, res) => {
-    // código das inscrições...
-});
-
-// ROTAS PROTEGIDAS - com verificarAuth individual:
-app.get('/api/verificar-token', verificarAuth, (req, res) => {
-    // código...
-});
-
-app.get('/api/inscricoes', verificarAuth, async (req, res) => {
-    // listar inscrições (ADMIN)
-});
-
-app.get('/api/estatisticas', verificarAuth, async (req, res) => {
-    // estatísticas (ADMIN)
-});
-
-app.get('/api/exportar', verificarAuth, async (req, res) => {
-    // exportar (ADMIN)
-});
-
+// ROTAS PROTEGIDAS (SOMENTE ADMIN)
 
 // Verificar token
-app.get('/api/verificar-token', (req, res) => {
+app.get('/api/verificar-token', verificarAuth, (req, res) => {
     // Se chegou aqui, o token é válido (verificado no middleware)
     res.json({
         sucesso: true,
@@ -300,7 +259,7 @@ app.get('/api/verificar-token', (req, res) => {
 });
 
 // Listar inscrições (PROTEGIDA)
-app.get('/api/inscricoes', async (req, res) => {
+app.get('/api/inscricoes', verificarAuth, async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 50;
@@ -330,7 +289,7 @@ app.get('/api/inscricoes', async (req, res) => {
 });
 
 // Estatísticas (PROTEGIDA)
-app.get('/api/estatisticas', async (req, res) => {
+app.get('/api/estatisticas', verificarAuth, async (req, res) => {
     try {
         const stats = await db.obterEstatisticas();
         
@@ -349,7 +308,7 @@ app.get('/api/estatisticas', async (req, res) => {
 });
 
 // Exportar dados (PROTEGIDA)
-app.get('/api/exportar', async (req, res) => {
+app.get('/api/exportar', verificarAuth, async (req, res) => {
     try {
         const formato = req.query.formato || 'csv';
         
