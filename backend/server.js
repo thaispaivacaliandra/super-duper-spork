@@ -256,12 +256,35 @@ app.post('/api/login', async (req, res) => {
 });
 
 // APLICAR PROTEÇÃO DE AUTENTICAÇÃO NAS ROTAS SENSÍVEIS
-app.use('/api/inscricoes', verificarAuth);
-app.use('/api/estatisticas', verificarAuth);
-app.use('/api/exportar', verificarAuth);
-app.use('/api/verificar-token', verificarAuth);
+// PROTEGER APENAS AS ROTAS ADMIN:
 
-// ROTAS PROTEGIDAS (SOMENTE ADMIN)
+// Login (PÚBLICO)
+app.post('/api/login', async (req, res) => {
+    // código do login...
+});
+
+// Inscrições (PÚBLICO)
+app.post('/api/inscricoes', async (req, res) => {
+    // código das inscrições...
+});
+
+// ROTAS PROTEGIDAS - com verificarAuth individual:
+app.get('/api/verificar-token', verificarAuth, (req, res) => {
+    // código...
+});
+
+app.get('/api/inscricoes', verificarAuth, async (req, res) => {
+    // listar inscrições (ADMIN)
+});
+
+app.get('/api/estatisticas', verificarAuth, async (req, res) => {
+    // estatísticas (ADMIN)
+});
+
+app.get('/api/exportar', verificarAuth, async (req, res) => {
+    // exportar (ADMIN)
+});
+
 
 // Verificar token
 app.get('/api/verificar-token', (req, res) => {
