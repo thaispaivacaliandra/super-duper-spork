@@ -95,15 +95,22 @@ possiveisCaminhos.forEach((caminho, index) => {
 console.log('===============================\n');
 
 // Servir arquivos estáticos (dashboard admin)
-app.use('/admin', express.static(path.join(__dirname, 'public')));
+const publicPath = path.join(__dirname, 'public');
+console.log('📁 Public path:', publicPath);
+app.use('/admin', express.static(publicPath));
 
-// Rotas específicas para admin (corrigir problema da barra)
+
+// Rotas específicas para admin
 app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+    const adminPath = path.join(__dirname, 'public', 'admin.html');
+    console.log('📄 Admin path:', adminPath);
+    res.sendFile(adminPath);
 });
 
 app.get('/admin/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+    const adminPath = path.join(__dirname, 'public', 'admin.html');
+    console.log('📄 Admin path:', adminPath);
+    res.sendFile(adminPath);
 });
 
 // 🔥 SERVIR FRONTEND COM DIAGNÓSTICO
